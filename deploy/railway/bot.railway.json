@@ -9,7 +9,8 @@
       "tsconfig.base.json",
       "apps/bot/**",
       "packages/contracts/**",
-      "packages/service-core/**"
+      "packages/service-core/**",
+      "assets/**"
     ]
   },
   "deploy": {

@@ -75,7 +75,7 @@ Set these on the services that need them:
 - `STRIPE_SECRET_KEY`
 - `STRIPE_WEBHOOK_SECRET`
 - `STRIPE_PRICE_ID`
-- `STRIPE_PUBLIC_PAYMENT_LINK_URL=<optional public Stripe payment link for the landing page CTA>`
+- `STRIPE_PUBLIC_PAYMENT_LINK_URL=<optional fallback public Stripe payment link for the landing page CTA; the embedded Stripe buy button is already wired into the page>`
 - `STRIPE_SUCCESS_URL=https://ifyrt.app/subscribed?session_id={CHECKOUT_SESSION_ID}`
 - `STRIPE_CANCEL_URL=https://ifyrt.app/#pricing`
 - `STRIPE_PORTAL_RETURN_URL=https://ifyrt.app/dashboard`
