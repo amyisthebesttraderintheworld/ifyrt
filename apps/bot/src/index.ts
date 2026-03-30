@@ -1,5 +1,7 @@
 import crypto from "node:crypto";
 
+import express from "express";
+
 import { type IfyrtEvent } from "@ifyrt/contracts";
 import {
   createServiceApp,
