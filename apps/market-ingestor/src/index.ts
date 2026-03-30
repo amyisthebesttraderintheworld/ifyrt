@@ -1,4 +1,4 @@
-import WebSocket from "ws";
+import WebSocket, { type RawData } from "ws";
 
 import type { MarketSnapshot } from "@ifyrt/contracts";
 import { createServiceApp, csvEnv, intEnv, logError, logInfo } from "@ifyrt/service-core";
@@ -27,7 +27,7 @@ function startStream(): void {
     logInfo(serviceName, "Connected to Binance bookTicker stream", { symbols });
   });
 
-  socket.on("message", (rawMessage) => {
+  socket.on("message", (rawMessage: RawData) => {
     try {
       const parsed = JSON.parse(rawMessage.toString()) as {
         data?: {
@@ -75,7 +75,7 @@ function startStream(): void {
     setTimeout(startStream, 5000);
   });
 
-  socket.on("error", (error) => {
+  socket.on("error", (error: Error) => {
     logError(serviceName, "Market stream error", {
       error: error instanceof Error ? error.message : "unknown_error"
     });

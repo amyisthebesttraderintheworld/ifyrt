@@ -108,11 +108,12 @@ export function simulateBacktest(request: BacktestRequest, strategy: Strategy): 
       return;
     }
 
+    const tradeSide = signal.side;
     const fillValue = fill.fill_price * fill.filled_quantity;
     const tradeId = crypto.randomUUID();
     let pnl = 0;
 
-    if (fill.side === "buy") {
+    if (tradeSide === "buy") {
       if (state.position.open) {
         const equity = portfolioEquity(state, snapshot.last);
         updateDrawdown(state, equity);
@@ -134,7 +135,7 @@ export function simulateBacktest(request: BacktestRequest, strategy: Strategy): 
         quantity: fill.filled_quantity,
         unrealized_pnl: 0
       };
-    } else if (fill.side === "sell") {
+    } else {
       if (!state.position.open || !state.position.entry_price) {
         const equity = portfolioEquity(state, snapshot.last);
         updateDrawdown(state, equity);
@@ -161,7 +162,7 @@ export function simulateBacktest(request: BacktestRequest, strategy: Strategy): 
       strategy: strategy.name,
       symbol: request.symbol,
       exchange: request.exchange,
-      side: fill.side,
+      side: tradeSide,
       type: fill.type,
       quantity: fill.filled_quantity,
       fill_price: fill.fill_price,
