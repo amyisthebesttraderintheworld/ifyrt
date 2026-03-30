@@ -1,6 +1,7 @@
 import {
   backtestPayloadSchema,
   copyStartPayloadSchema,
+  copyStopPayloadSchema,
   keySubmitPayloadSchema,
   simulationStartPayloadSchema,
   type EventPayloadMap,
@@ -23,6 +24,10 @@ function normalizeSymbol(raw: string): string {
   return raw.replace(/[\/_-]/g, "").toUpperCase();
 }
 
+function normalizeHandle(raw: string): string {
+  return raw.replace(/^@/, "").trim();
+}
+
 function parseDateInput(raw: string): string {
   if (raw.includes("T")) {
     const parsed = new Date(raw);
@@ -38,6 +43,31 @@ function parseDateInput(raw: string): string {
   }
 
   return parsed.toISOString();
+}
+
+function parseCopyStartArgs(args: string[]): EventPayloadMap["copy.start"] {
+  const [firstArg, secondArg, thirdArg] = args;
+  const commandStyle = firstArg?.toLowerCase();
+
+  if (commandStyle === "follow") {
+    if (!secondArg) {
+      throw new Error("Copy format: /copy <leader> [sim|live] or /copy follow <leader> [sim|live]");
+    }
+
+    return copyStartPayloadSchema.parse({
+      leader: normalizeHandle(secondArg),
+      mode: thirdArg?.toLowerCase() ?? "sim"
+    });
+  }
+
+  if (!firstArg) {
+    throw new Error("Copy format: /copy <leader> [sim|live] or /copy follow <leader> [sim|live]");
+  }
+
+  return copyStartPayloadSchema.parse({
+    leader: normalizeHandle(firstArg),
+    mode: secondArg?.toLowerCase() ?? "sim"
+  });
 }
 
 export function parseTelegramCommand(text: string, chat: TelegramChat): ParsedCommand {
@@ -87,19 +117,16 @@ export function parseTelegramCommand(text: string, chat: TelegramChat): ParsedCo
     case "/live_off":
       return { eventType: "live.disable", payload: {}, deleteMessage: false };
     case "/copy": {
-      if (args.length < 1) {
-        throw new Error("Copy format: /copy <leader> [sim|live]");
-      }
-
-      const parsed = copyStartPayloadSchema.parse({
-        leader: args[0],
-        mode: args[1]?.toLowerCase() ?? "sim"
-      });
-
+      const parsed = parseCopyStartArgs(args);
       return { eventType: "copy.start", payload: parsed, deleteMessage: false };
     }
-    case "/copy_stop":
-      return { eventType: "copy.stop", payload: {}, deleteMessage: false };
+    case "/copy_stop": {
+      const leader = args[0] ? normalizeHandle(args[0]) : undefined;
+      const parsed = copyStopPayloadSchema.parse({
+        leader
+      });
+      return { eventType: "copy.stop", payload: parsed, deleteMessage: false };
+    }
     case "/subscribe":
       return { eventType: "subscription.view", payload: {}, deleteMessage: false };
     case "/dashboard":

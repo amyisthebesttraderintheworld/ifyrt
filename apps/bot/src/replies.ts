@@ -9,7 +9,8 @@ export const helpText = `/start
 /live_on
 /live_off
 /copy <leader> [sim|live]
-/copy_stop
+/copy follow <leader> [sim|live]
+/copy_stop [leader]
 /subscribe
 /dashboard
 /strategies
@@ -38,7 +39,7 @@ export function acknowledgementFor(eventType: EventType): string {
     case "copy.stop":
       return "Copy-trading stop request received.";
     case "subscription.view":
-      return "Subscription details are being prepared.";
+      return "Subscription details are being prepared, including checkout or billing options if available.";
     case "dashboard.request":
       return "Dashboard access request received.";
     case "strategy.list":

@@ -17,16 +17,36 @@ This repository follows the boundaries in `docs/archive/foundation/ifyrt-clean-d
 ## n8n -> live-exec
 
 - `POST /sessions/enable`
+  Body: `LiveSessionEnableRequest`
 - `POST /sessions/disable`
+  Body: `LiveSessionDisableRequest`
 - `POST /orders/execute`
+  Body: `LiveOrderRequest`
+- `POST /circuit-breakers/trigger`
+  Body: `CircuitBreakerTriggerRequest`
+- `POST /circuit-breakers/reset`
+  Body: `CircuitBreakerResetRequest`
 
 ## n8n -> copy-worker
 
 - `POST /copy/fanout`
+  Body: `CopyFanoutRequest`
 - `POST /copy/stop`
+  Body: `CopyStopRequest`
+
+## n8n -> payments
+
+- `POST /checkout/sessions`
+  Body: `CheckoutSessionRequest`
+- `POST /billing/portal`
+  Body: `BillingPortalSessionRequest`
 
 ## Stripe -> payments
 
 - `POST /stripe/webhook`
+
+## Deployment note
+
+All scanning, orchestration, and worker-side execution flows are intended to run on Railway services or n8n, not in the Telegram bot and not in any optional dashboard.
 
 The external endpoints are intentionally thin. Most orchestration remains in n8n and shared state stays in Supabase.

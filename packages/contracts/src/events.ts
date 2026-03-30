@@ -51,6 +51,10 @@ export const copyStartPayloadSchema = z.object({
   mode: z.enum(["sim", "live"]).default("sim")
 });
 
+export const copyStopPayloadSchema = z.object({
+  leader: z.string().min(1).optional()
+});
+
 export const keySubmitPayloadSchema = z.object({
   exchange: exchangeSchema,
   api_key: z.string().min(1),
@@ -81,7 +85,7 @@ export type EventPayloadMap = {
   "live.enable": Record<string, never>;
   "live.disable": Record<string, never>;
   "copy.start": z.infer<typeof copyStartPayloadSchema>;
-  "copy.stop": Record<string, never>;
+  "copy.stop": z.infer<typeof copyStopPayloadSchema>;
   "subscription.view": Record<string, never>;
   "dashboard.request": Record<string, never>;
   "strategy.list": Record<string, never>;

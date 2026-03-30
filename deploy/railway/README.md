@@ -19,7 +19,7 @@ Set these on the services that need them:
 - `INTERNAL_WEBHOOK_SECRET`
 - `RAILWAY_PUBLIC_DOMAIN`
 - `SUPABASE_URL`
-- `SUPABASE_SERVICE_ROLE_KEY`
+- `SUPABASE_SERVICE_KEY` or `SUPABASE_SERVICE_ROLE_KEY`
 - `TELEGRAM_BOT_TOKEN`
 
 ## Bot variables
@@ -41,7 +41,7 @@ Set these on the services that need them:
 - `N8N_EDITOR_BASE_URL=https://<your-n8n-domain>`
 - `INTERNAL_WEBHOOK_SECRET=<same secret as bot/workers>`
 - `SUPABASE_URL=<your supabase url>`
-- `SUPABASE_SERVICE_ROLE_KEY=<your service role key>`
+- `SUPABASE_SERVICE_KEY=<your service role key>` or `SUPABASE_SERVICE_ROLE_KEY=<your service role key>`
 - `TELEGRAM_BOT_TOKEN=<your telegram bot token>`
 - `SIM_WORKER_URL=https://<your sim worker domain>`
 - `LIVE_EXEC_URL=https://<your live exec domain>`
@@ -74,10 +74,22 @@ Set these on the services that need them:
 
 - `STRIPE_SECRET_KEY`
 - `STRIPE_WEBHOOK_SECRET`
+- `STRIPE_PRICE_ID`
+- `STRIPE_PUBLIC_PAYMENT_LINK_URL=<optional public Stripe payment link for the landing page CTA>`
+- `STRIPE_SUCCESS_URL=https://ifyrt.app/subscribed?session_id={CHECKOUT_SESSION_ID}`
+- `STRIPE_CANCEL_URL=https://ifyrt.app/#pricing`
+- `STRIPE_PORTAL_RETURN_URL=https://ifyrt.app/dashboard`
+- `IFYRT_BOT_URL=https://t.me/IFYRTbot`
+- `SUPPORT_EMAIL=support@ifyrt.app`
+- `INTERNAL_WEBHOOK_SECRET`
+- `SUPABASE_URL`
+- `SUPABASE_SERVICE_KEY` or `SUPABASE_SERVICE_ROLE_KEY`
+- `TELEGRAM_BOT_TOKEN`
 
 ## Notes
 
 - The workflow JSON in `n8n/workflows/01-ifyrt-gateway-router.json` expects the n8n service variables above.
 - The SQL helpers in `supabase/schema.sql` are meant to be run before importing the workflow.
+- Scanning, routing, payment flows, and worker execution are expected to run in Railway-hosted services or n8n rather than in client-side surfaces.
 - `RAILWAY_PUBLIC_DOMAIN` is stored in `.env` as `ifyrt-production.up.railway.app`.
 - If a Railway service uses a generic name such as `ifyrt`, set `IFYRT_SERVICE_TARGET` to the intended app service name like `ifyrt-bot` or `ifyrt-sim-worker`.

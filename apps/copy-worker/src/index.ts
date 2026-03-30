@@ -1,4 +1,4 @@
-import { copyFanoutRequestSchema } from "@ifyrt/contracts";
+import { copyFanoutRequestSchema, copyStopRequestSchema } from "@ifyrt/contracts";
 import {
   createServiceApp,
   intEnv,
@@ -8,10 +8,13 @@ import {
   validationError
 } from "@ifyrt/service-core";
 
+import { activeCopyRouteCount, createCopyRouteStore, planCopyFanout, stopCopyRoutes } from "./state";
+
 const serviceName = "ifyrt-copy-worker";
 const internalWebhookSecret = optionalEnv("INTERNAL_WEBHOOK_SECRET");
 const port = intEnv("PORT", 3004);
 const app = createServiceApp(serviceName);
+const store = createCopyRouteStore();
 
 app.use((req, res, next) => {
   if (!requestSignatureIsValid(req, internalWebhookSecret)) {
@@ -22,6 +25,17 @@ app.use((req, res, next) => {
   next();
 });
 
+app.get("/health/details", (_req, res) => {
+  res.json({
+    service: serviceName,
+    status: "ok",
+    timestamp: new Date().toISOString(),
+    details: {
+      active_copy_routes: activeCopyRouteCount(store)
+    }
+  });
+});
+
 app.post("/copy/fanout", (req, res) => {
   const parsed = copyFanoutRequestSchema.safeParse(req.body);
   if (!parsed.success) {
@@ -29,53 +43,34 @@ app.post("/copy/fanout", (req, res) => {
     return;
   }
 
-  const planned = parsed.data.followers.map((follower) => {
-    if (!follower.active) {
-      return {
-        follower_id: follower.follower_id,
-        mode: follower.mode,
-        status: "skipped" as const,
-        reason: "Follower subscription is inactive."
-      };
-    }
+  const response = planCopyFanout(store, parsed.data);
 
-    if (!follower.allow_copy) {
-      return {
-        follower_id: follower.follower_id,
-        mode: follower.mode,
-        status: "skipped" as const,
-        reason: "Leader permissions do not allow copying."
-      };
-    }
-
-    if (follower.mode === "live" && !follower.has_session) {
-      return {
-        follower_id: follower.follower_id,
-        mode: follower.mode,
-        status: "skipped" as const,
-        reason: "Live copy requires an active live session."
-      };
-    }
-
-    return {
-      follower_id: follower.follower_id,
-      mode: follower.mode,
-      status: "pending" as const
-    };
+  logInfo(serviceName, "Copy fanout planned", {
+    leader_id: parsed.data.signal.leader_id,
+    strategy: parsed.data.signal.strategy,
+    symbol: parsed.data.signal.symbol,
+    pending_routes: response.planned.filter((entry) => entry.status === "pending").length,
+    active_copy_routes: response.active_routes
   });
 
-  res.json({
-    signal: parsed.data.signal,
-    planned
-  });
+  res.json(response);
 });
 
 app.post("/copy/stop", (req, res) => {
-  res.json({
-    accepted: true,
-    status: "stopped",
-    request: req.body
+  const parsed = copyStopRequestSchema.safeParse(req.body);
+  if (!parsed.success) {
+    validationError(res, parsed.error.issues);
+    return;
+  }
+
+  const response = stopCopyRoutes(store, parsed.data);
+  logInfo(serviceName, "Copy routes stopped", {
+    follower_id: parsed.data.follower_id,
+    leader_id: parsed.data.leader_id,
+    stopped_routes: response.stopped_routes
   });
+
+  res.json(response);
 });
 
 app.listen(port, () => {
