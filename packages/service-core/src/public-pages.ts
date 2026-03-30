@@ -21,25 +21,29 @@ function layout(title: string, description: string, body: string): string {
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>${escapeHtml(title)}</title>
     <meta name="description" content="${escapeHtml(description)}" />
-    <meta name="theme-color" content="#f4ecde" />
+    <meta name="theme-color" content="#040807" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet" />
     <style>
       :root {
-        color-scheme: light;
-        --paper: #f4ecde;
-        --paper-2: #ebdfca;
-        --paper-3: rgba(255, 251, 245, 0.86);
-        --ink: #12253f;
-        --ink-soft: #55657b;
-        --ink-strong: #0d1c31;
-        --line: rgba(18, 37, 63, 0.12);
-        --line-strong: rgba(18, 37, 63, 0.2);
-        --panel: rgba(255, 250, 243, 0.78);
-        --panel-strong: rgba(255, 255, 255, 0.88);
-        --brand: #df6d38;
-        --brand-deep: #b85027;
-        --accent: #1f8a78;
-        --accent-soft: rgba(31, 138, 120, 0.12);
-        --shadow: 0 24px 80px rgba(18, 37, 63, 0.12);
+        color-scheme: dark;
+        --bg: #050908;
+        --bg-deep: #020504;
+        --panel: rgba(9, 15, 13, 0.84);
+        --panel-strong: rgba(7, 11, 10, 0.94);
+        --panel-soft: rgba(10, 18, 15, 0.74);
+        --line: rgba(137, 171, 156, 0.14);
+        --line-strong: rgba(72, 240, 139, 0.22);
+        --text: #eef5f0;
+        --text-soft: #9cab9f;
+        --text-faint: #6f8077;
+        --accent: #43ea87;
+        --accent-deep: #21b760;
+        --accent-glow: rgba(67, 234, 135, 0.24);
+        --warm: #ff8f6e;
+        --gold: #d4d58a;
+        --shadow: 0 28px 80px rgba(0, 0, 0, 0.38);
       }
 
       * {
@@ -53,42 +57,40 @@ function layout(title: string, description: string, body: string): string {
       body {
         margin: 0;
         min-height: 100vh;
-        font-family: "Avenir Next", "Segoe UI", "Helvetica Neue", sans-serif;
-        color: var(--ink);
+        font-family: "Manrope", "Segoe UI", sans-serif;
+        color: var(--text);
         background:
-          radial-gradient(circle at top left, rgba(223, 109, 56, 0.2), transparent 30%),
-          radial-gradient(circle at 85% 15%, rgba(31, 138, 120, 0.14), transparent 25%),
-          radial-gradient(circle at bottom right, rgba(18, 37, 63, 0.08), transparent 26%),
-          linear-gradient(180deg, #f8f2e7 0%, #f2e8d7 54%, #efe4d2 100%);
+          radial-gradient(circle at 18% 0%, rgba(20, 83, 51, 0.24), transparent 28%),
+          radial-gradient(circle at 82% 14%, rgba(255, 143, 110, 0.1), transparent 24%),
+          linear-gradient(180deg, #070b0a 0%, var(--bg) 42%, var(--bg-deep) 100%);
       }
 
       body::before,
       body::after {
         content: "";
         position: fixed;
-        inset: auto;
         pointer-events: none;
         z-index: -1;
       }
 
       body::before {
-        top: -160px;
-        right: -140px;
-        width: 420px;
-        height: 420px;
+        inset: -14% auto auto 12%;
+        width: 54vw;
+        height: 54vw;
         border-radius: 50%;
-        background: radial-gradient(circle, rgba(223, 109, 56, 0.18), transparent 68%);
-        filter: blur(12px);
+        background: radial-gradient(circle, rgba(67, 234, 135, 0.14), transparent 68%);
+        filter: blur(60px);
+        animation: drift 14s ease-in-out infinite;
       }
 
       body::after {
-        left: -120px;
-        bottom: -120px;
-        width: 360px;
-        height: 360px;
+        right: 6%;
+        bottom: 4%;
+        width: 32vw;
+        height: 32vw;
         border-radius: 50%;
-        background: radial-gradient(circle, rgba(31, 138, 120, 0.16), transparent 68%);
-        filter: blur(16px);
+        background: radial-gradient(circle, rgba(255, 143, 110, 0.08), transparent 70%);
+        filter: blur(72px);
       }
 
       a {
@@ -98,12 +100,9 @@ function layout(title: string, description: string, body: string): string {
 
       p,
       li {
-        color: var(--ink-soft);
-        line-height: 1.72;
-      }
-
-      p {
         margin: 0;
+        color: var(--text-soft);
+        line-height: 1.72;
       }
 
       ul {
@@ -111,100 +110,289 @@ function layout(title: string, description: string, body: string): string {
         padding-left: 20px;
       }
 
+      h1,
+      h2,
+      h3 {
+        margin: 0;
+        color: var(--text);
+        font-family: "Space Grotesk", "Segoe UI", sans-serif;
+        letter-spacing: -0.04em;
+      }
+
+      h1 {
+        font-size: clamp(3rem, 8vw, 5.9rem);
+        line-height: 0.94;
+      }
+
+      h2 {
+        font-size: clamp(2rem, 4.6vw, 3.45rem);
+        line-height: 0.98;
+      }
+
+      h3 {
+        font-size: clamp(1.28rem, 2.1vw, 1.7rem);
+        line-height: 1.06;
+      }
+
       .page-shell {
-        width: min(1160px, calc(100% - 32px));
+        width: min(1180px, calc(100% - 32px));
         margin: 0 auto;
-        padding: 28px 0 72px;
+        padding: 24px 0 76px;
       }
 
       .panel {
         border: 1px solid var(--line);
-        background: var(--panel);
-        border-radius: 30px;
+        background: linear-gradient(180deg, rgba(10, 16, 14, 0.94) 0%, rgba(6, 10, 9, 0.9) 100%);
+        border-radius: 32px;
         box-shadow: var(--shadow);
         backdrop-filter: blur(18px);
       }
 
       .panel-strong {
-        background: var(--panel-strong);
+        background: linear-gradient(180deg, rgba(8, 12, 11, 0.98) 0%, rgba(4, 8, 7, 0.98) 100%);
       }
 
       .site-header {
-        display: flex;
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
         align-items: center;
-        justify-content: space-between;
         gap: 20px;
-        margin-bottom: 24px;
+        padding: 14px 18px;
+        margin-bottom: 20px;
+        border: 1px solid rgba(137, 171, 156, 0.1);
+        border-radius: 999px;
+        background: rgba(5, 8, 7, 0.72);
+        backdrop-filter: blur(18px);
+        position: sticky;
+        top: 18px;
+        z-index: 20;
       }
 
       .brand-lockup {
-        display: grid;
-        gap: 8px;
+        display: inline-flex;
+        align-items: center;
+        gap: 12px;
+        min-width: 0;
       }
 
       .brand-mark {
         display: inline-flex;
         align-items: center;
-        gap: 10px;
-        width: fit-content;
-        padding: 9px 14px;
-        border-radius: 999px;
-        border: 1px solid rgba(18, 37, 63, 0.14);
-        background: rgba(255, 255, 255, 0.6);
-        font-size: 0.78rem;
-        font-weight: 800;
-        letter-spacing: 0.18em;
+        gap: 12px;
+        font-family: "Space Grotesk", "Segoe UI", sans-serif;
+        font-size: 0.94rem;
+        font-weight: 700;
+        letter-spacing: 0.12em;
         text-transform: uppercase;
       }
 
       .brand-mark::before {
         content: "";
-        width: 12px;
-        height: 12px;
-        border-radius: 3px;
-        background: linear-gradient(135deg, var(--brand) 0%, var(--accent) 100%);
-        box-shadow: 12px -6px 0 -3px rgba(31, 138, 120, 0.3);
+        width: 14px;
+        height: 14px;
+        border-radius: 4px;
+        background: linear-gradient(135deg, var(--warm) 0%, var(--accent) 100%);
+        box-shadow: 0 0 0 4px rgba(67, 234, 135, 0.08), 0 0 22px rgba(67, 234, 135, 0.22);
       }
 
       .brand-note {
-        max-width: 520px;
-        font-size: 0.95rem;
+        color: var(--text-faint);
+        font-size: 0.84rem;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
       }
 
-      .header-links {
+      .site-nav,
+      .cta-group,
+      .footer-links {
         display: flex;
         flex-wrap: wrap;
         gap: 10px;
       }
 
-      .header-link {
-        padding: 12px 16px;
-        border-radius: 999px;
-        border: 1px solid var(--line);
-        background: rgba(255, 255, 255, 0.5);
-        color: var(--ink-strong);
-        font-size: 0.94rem;
+      .site-nav {
+        justify-content: center;
       }
 
-      .header-link:hover,
-      .header-link:focus-visible,
+      .nav-link {
+        padding: 10px 16px;
+        border-radius: 999px;
+        color: var(--text-soft);
+        font-size: 0.94rem;
+        transition: color 180ms ease, background 180ms ease, transform 180ms ease;
+      }
+
+      .nav-link:hover,
+      .nav-link:focus-visible,
       .button:hover,
       .button:focus-visible,
       .jump-link:hover,
-      .jump-link:focus-visible {
+      .jump-link:focus-visible,
+      .footer-link:hover,
+      .footer-link:focus-visible {
         transform: translateY(-1px);
       }
 
-      .hero {
-        display: grid;
-        grid-template-columns: minmax(0, 1.2fr) minmax(320px, 0.88fr);
-        gap: 24px;
-        align-items: stretch;
+      .nav-link:hover,
+      .nav-link:focus-visible {
+        color: var(--text);
+        background: rgba(255, 255, 255, 0.04);
       }
 
-      .hero-copy,
-      .hero-card,
-      .section-card,
+      .button {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 54px;
+        padding: 0 22px;
+        border-radius: 999px;
+        border: 1px solid transparent;
+        font-weight: 800;
+        font-size: 0.98rem;
+        letter-spacing: -0.01em;
+        transition: transform 180ms ease, box-shadow 180ms ease, border-color 180ms ease, background 180ms ease;
+      }
+
+      .button-small {
+        min-height: 44px;
+        padding: 0 18px;
+        font-size: 0.92rem;
+      }
+
+      .button-primary {
+        color: #071109;
+        background: linear-gradient(135deg, #4ef191 0%, var(--accent) 100%);
+        box-shadow: 0 0 0 1px rgba(72, 240, 139, 0.28) inset, 0 18px 38px rgba(25, 177, 92, 0.26);
+      }
+
+      .button-secondary {
+        border-color: var(--line);
+        background: rgba(255, 255, 255, 0.02);
+        color: var(--text);
+      }
+
+      .header-action {
+        justify-self: end;
+      }
+
+      .hero {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-height: calc(100vh - 190px);
+        margin-top: 22px;
+      }
+
+      .hero-shell {
+        width: min(940px, 100%);
+        padding: 72px 40px 42px;
+        text-align: center;
+        overflow: hidden;
+        position: relative;
+      }
+
+      .hero-shell::before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background:
+          radial-gradient(circle at 50% 0%, rgba(67, 234, 135, 0.12), transparent 42%),
+          radial-gradient(circle at 50% 100%, rgba(255, 143, 110, 0.06), transparent 36%);
+        pointer-events: none;
+      }
+
+      .hero-shell::after {
+        content: "";
+        position: absolute;
+        inset: 11% 23%;
+        border-radius: 42px;
+        border: 1px solid rgba(72, 240, 139, 0.08);
+        background: linear-gradient(180deg, rgba(10, 18, 15, 0.26), rgba(10, 18, 15, 0));
+        pointer-events: none;
+      }
+
+      .hero-shell > * {
+        position: relative;
+        z-index: 1;
+      }
+
+      .eyebrow,
+      .hero-badge,
+      .price-callout {
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+        width: fit-content;
+        padding: 10px 16px;
+        border-radius: 999px;
+        border: 1px solid rgba(72, 240, 139, 0.16);
+        background: rgba(10, 22, 15, 0.66);
+        color: #8ddfb1;
+        font-size: 0.84rem;
+        font-weight: 700;
+        letter-spacing: 0.05em;
+      }
+
+      .eyebrow::before,
+      .hero-badge::before,
+      .price-callout::before {
+        content: "";
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #66f7a5 0%, var(--accent) 100%);
+        box-shadow: 0 0 16px var(--accent-glow);
+      }
+
+      .hero-title {
+        max-width: 760px;
+        margin: 26px auto 0;
+      }
+
+      .hero-title span {
+        background: linear-gradient(90deg, var(--warm) 0%, var(--gold) 36%, #7ce4a2 70%, var(--accent) 100%);
+        -webkit-background-clip: text;
+        background-clip: text;
+        color: transparent;
+      }
+
+      .hero-lead {
+        max-width: 650px;
+        margin: 22px auto 0;
+        font-size: 1.08rem;
+      }
+
+      .cta-group {
+        justify-content: center;
+        margin-top: 32px;
+      }
+
+      .mini-note {
+        margin-top: 18px;
+        font-size: 0.95rem;
+        color: var(--text-faint);
+      }
+
+      .proof-strip,
+      .step-grid,
+      .feature-grid,
+      .pricing-shell,
+      .showcase-grid,
+      .legal-shell {
+        display: grid;
+        gap: 18px;
+      }
+
+      .proof-strip {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        margin-top: 40px;
+      }
+
+      .proof-card,
+      .step-card,
+      .feature-card,
+      .pricing-card,
       .legal-sidebar,
       .legal-card,
       .footer {
@@ -212,360 +400,165 @@ function layout(title: string, description: string, body: string): string {
         overflow: hidden;
       }
 
-      .hero-copy {
-        padding: 38px;
-      }
-
-      .eyebrow {
-        display: inline-flex;
-        align-items: center;
-        gap: 10px;
-        width: fit-content;
-        padding: 9px 14px;
-        border-radius: 999px;
-        background: rgba(223, 109, 56, 0.12);
-        color: var(--brand-deep);
-        font-size: 0.78rem;
-        font-weight: 700;
-        letter-spacing: 0.14em;
-        text-transform: uppercase;
-      }
-
-      .eyebrow::before {
-        content: "";
-        width: 8px;
-        height: 8px;
-        border-radius: 50%;
-        background: var(--brand);
-      }
-
-      h1,
-      h2,
-      h3 {
-        margin: 0;
-        color: var(--ink-strong);
-        font-family: "Iowan Old Style", "Palatino Linotype", "Book Antiqua", "Times New Roman", serif;
-      }
-
-      h1 {
-        margin-top: 18px;
-        max-width: 760px;
-        font-size: clamp(2.9rem, 7vw, 5.7rem);
-        line-height: 0.94;
-        letter-spacing: -0.05em;
-      }
-
-      h2 {
-        font-size: clamp(2rem, 4.3vw, 3.4rem);
-        line-height: 0.98;
-        letter-spacing: -0.04em;
-      }
-
-      h3 {
-        font-size: 1.35rem;
-        line-height: 1.1;
-      }
-
-      .hero-lead {
-        max-width: 710px;
-        margin-top: 18px;
-        font-size: 1.1rem;
-      }
-
-      .cta-group,
-      .pill-row,
-      .stat-grid,
-      .feature-grid,
-      .legal-grid,
-      .footer-links {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 14px;
-      }
-
-      .cta-group {
-        margin-top: 28px;
-      }
-
-      .button {
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        min-height: 52px;
-        padding: 0 22px;
-        border-radius: 999px;
-        font-weight: 700;
-        transition: transform 180ms ease, box-shadow 180ms ease, background 180ms ease;
-      }
-
-      .button-primary {
-        background: linear-gradient(135deg, var(--brand) 0%, #f09e56 100%);
-        color: #fff9f1;
-        box-shadow: 0 14px 30px rgba(223, 109, 56, 0.24);
-      }
-
-      .button-secondary {
-        border: 1px solid rgba(18, 37, 63, 0.12);
-        background: rgba(255, 255, 255, 0.64);
-        color: var(--ink-strong);
-      }
-
-      .mini-note {
-        margin-top: 18px;
-        max-width: 660px;
-        font-size: 0.96rem;
-      }
-
-      .pill-row {
-        margin-top: 26px;
-      }
-
-      .pill {
-        padding: 10px 14px;
-        border-radius: 999px;
-        border: 1px solid rgba(18, 37, 63, 0.1);
-        background: rgba(255, 255, 255, 0.56);
-        color: var(--ink-strong);
-        font-size: 0.92rem;
-      }
-
-      .hero-card {
+      .proof-card,
+      .step-card,
+      .feature-card,
+      .pricing-card,
+      .legal-sidebar,
+      .legal-card {
         padding: 28px;
-        background:
-          linear-gradient(180deg, rgba(16, 32, 56, 0.98) 0%, rgba(12, 23, 40, 0.98) 100%);
-        color: #f7f1e7;
-        box-shadow: 0 28px 80px rgba(13, 24, 42, 0.28);
       }
 
-      .hero-card::before {
-        content: "";
-        position: absolute;
-        top: -40px;
-        right: -30px;
-        width: 180px;
-        height: 180px;
-        border-radius: 50%;
-        background: radial-gradient(circle, rgba(223, 109, 56, 0.26), transparent 70%);
+      .proof-card {
+        border-radius: 24px;
+        border: 1px solid var(--line);
+        background: rgba(10, 16, 14, 0.7);
+        text-align: left;
       }
 
-      .hero-card::after {
-        content: "";
-        position: absolute;
-        bottom: -50px;
-        left: -30px;
-        width: 210px;
-        height: 210px;
-        border-radius: 50%;
-        background: radial-gradient(circle, rgba(31, 138, 120, 0.22), transparent 72%);
-      }
-
-      .hero-card > * {
-        position: relative;
-        z-index: 1;
-      }
-
-      .panel-label {
-        color: rgba(255, 245, 233, 0.72);
-        font-size: 0.76rem;
-        font-weight: 700;
-        letter-spacing: 0.16em;
-        text-transform: uppercase;
-      }
-
-      .command-display {
-        display: grid;
-        gap: 14px;
-        margin-top: 20px;
-      }
-
-      .command-line {
-        padding: 16px 18px;
-        border-radius: 22px;
-        border: 1px solid rgba(255, 255, 255, 0.08);
-        background: rgba(255, 255, 255, 0.04);
-      }
-
-      .command-line strong {
+      .proof-card strong,
+      .price-point strong {
         display: block;
-        margin-bottom: 6px;
+        color: var(--text);
         font-size: 1rem;
-        letter-spacing: 0.03em;
       }
 
-      .command-line p,
-      .signal-card p {
-        color: rgba(244, 233, 220, 0.74);
-      }
-
-      .signal-grid {
-        display: grid;
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-        gap: 14px;
-        margin-top: 18px;
-      }
-
-      .signal-card {
-        padding: 16px;
-        border-radius: 20px;
-        background: rgba(255, 255, 255, 0.05);
-        border: 1px solid rgba(255, 255, 255, 0.08);
-      }
-
-      .signal-card strong {
+      .proof-card span {
         display: block;
-        margin-bottom: 6px;
-        color: #fff5ea;
-        font-size: 0.98rem;
+        margin-top: 10px;
+        color: var(--text-soft);
       }
 
       .section {
-        margin-top: 24px;
+        margin-top: 28px;
       }
 
-      .stat-band {
-        padding: 18px;
-      }
-
-      .stat-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-      }
-
-      .stat-card {
-        padding: 18px;
-        border-radius: 24px;
-        background: rgba(255, 255, 255, 0.48);
-        border: 1px solid rgba(18, 37, 63, 0.08);
-      }
-
-      .stat-card small {
-        display: block;
-        margin-bottom: 10px;
-        color: var(--brand-deep);
-        font-size: 0.74rem;
-        font-weight: 700;
-        letter-spacing: 0.14em;
-        text-transform: uppercase;
-      }
-
-      .stat-card strong {
-        display: block;
-        color: var(--ink-strong);
-        font-size: 1.04rem;
-        line-height: 1.36;
-      }
-
-      .story-grid,
-      .legal-shell {
-        display: grid;
-        grid-template-columns: minmax(0, 0.96fr) minmax(0, 1.04fr);
-        gap: 24px;
-      }
-
-      .section-card {
-        padding: 32px;
-      }
-
-      .section-card-ink {
-        background: linear-gradient(180deg, rgba(16, 32, 56, 0.98) 0%, rgba(10, 20, 35, 0.98) 100%);
-        color: #f7f1e7;
-      }
-
-      .section-card-ink h2,
-      .section-card-ink h3,
-      .section-card-ink p,
-      .section-card-ink li,
-      .section-card-ink .kicker,
-      .section-card-ink .number-pill {
-        color: inherit;
-      }
-
-      .section-card-ink .kicker {
-        color: rgba(246, 232, 215, 0.74);
-      }
-
-      .section-card-ink .number-pill {
-        background: rgba(255, 255, 255, 0.08);
-        border-color: rgba(255, 255, 255, 0.1);
-      }
-
-      .section-card-warm {
-        background: linear-gradient(180deg, rgba(255, 252, 247, 0.86) 0%, rgba(245, 236, 223, 0.92) 100%);
+      .section-intro {
+        max-width: 720px;
+        margin-bottom: 20px;
       }
 
       .kicker {
         display: inline-block;
         margin-bottom: 16px;
-        color: var(--brand-deep);
-        font-size: 0.78rem;
+        color: #8ddfb1;
+        font-size: 0.82rem;
         font-weight: 700;
-        letter-spacing: 0.16em;
+        letter-spacing: 0.12em;
         text-transform: uppercase;
       }
 
-      .stack {
-        display: grid;
-        gap: 18px;
+      .section-intro p {
+        margin-top: 16px;
+      }
+
+      .step-grid {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
       }
 
       .number-pill {
         display: inline-flex;
         align-items: center;
         justify-content: center;
-        min-width: 56px;
+        min-width: 60px;
         min-height: 34px;
         padding: 0 12px;
         border-radius: 999px;
-        border: 1px solid var(--line);
-        background: rgba(255, 255, 255, 0.56);
-        color: var(--ink-strong);
-        font-size: 0.82rem;
-        font-weight: 700;
+        border: 1px solid var(--line-strong);
+        background: rgba(11, 28, 18, 0.8);
+        color: #8ddfb1;
+        font-size: 0.8rem;
+        font-weight: 800;
         letter-spacing: 0.12em;
       }
 
+      .step-card p,
+      .feature-card p,
+      .pricing-card p {
+        margin-top: 14px;
+      }
+
+      .step-card h3,
+      .feature-card h3,
+      .pricing-card h3,
+      .legal-title {
+        margin-top: 18px;
+      }
+
+      .showcase-grid,
+      .pricing-shell {
+        grid-template-columns: minmax(0, 1.02fr) minmax(320px, 0.98fr);
+      }
+
       .feature-grid {
-        display: grid;
         grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
       }
 
-      .feature-card {
-        padding: 28px;
-        border-radius: 28px;
-        border: 1px solid var(--line);
-        background: rgba(255, 255, 255, 0.58);
-        box-shadow: 0 20px 60px rgba(18, 37, 63, 0.08);
+      .signal-cluster {
+        display: grid;
+        gap: 14px;
+        margin-top: 20px;
       }
 
-      .feature-card p {
-        margin-top: 12px;
+      .command-line {
+        padding: 18px 18px 16px;
+        border-radius: 24px;
+        border: 1px solid rgba(72, 240, 139, 0.08);
+        background: rgba(255, 255, 255, 0.02);
+      }
+
+      .command-line strong {
+        display: block;
+        margin-bottom: 8px;
+        color: var(--text);
+        font-size: 1rem;
+        letter-spacing: 0.02em;
       }
 
       .list-tight {
         display: grid;
-        gap: 10px;
+        gap: 12px;
         margin-top: 18px;
         padding-left: 20px;
       }
 
-      .list-tight li {
-        margin: 0;
+      .price-points {
+        display: grid;
+        gap: 16px;
+        margin-top: 22px;
+      }
+
+      .price-point {
+        display: grid;
+        grid-template-columns: 18px minmax(0, 1fr);
+        gap: 14px;
+        align-items: start;
+      }
+
+      .price-point::before {
+        content: "";
+        width: 10px;
+        height: 10px;
+        margin-top: 8px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, var(--warm) 0%, var(--accent) 100%);
+        box-shadow: 0 0 18px rgba(67, 234, 135, 0.18);
+      }
+
+      .legal-shell {
+        grid-template-columns: minmax(280px, 0.82fr) minmax(0, 1.18fr);
+        margin-top: 24px;
       }
 
       .legal-sidebar {
-        padding: 30px;
         align-self: start;
         position: sticky;
-        top: 24px;
+        top: 104px;
       }
 
       .legal-main {
         display: grid;
         gap: 18px;
-      }
-
-      .legal-title {
-        margin-top: 16px;
       }
 
       .legal-meta {
@@ -579,51 +572,36 @@ function layout(title: string, description: string, body: string): string {
         margin-top: 24px;
       }
 
-      .jump-link {
-        display: flex;
+      .jump-link,
+      .footer-link {
+        display: inline-flex;
         align-items: center;
-        justify-content: space-between;
         gap: 10px;
-        padding: 14px 16px;
+        padding: 12px 16px;
         border-radius: 18px;
         border: 1px solid var(--line);
-        background: rgba(255, 255, 255, 0.56);
-        color: var(--ink-strong);
-        transition: transform 180ms ease;
+        background: rgba(255, 255, 255, 0.03);
+        transition: transform 180ms ease, border-color 180ms ease, background 180ms ease;
       }
 
       .jump-link::after {
         content: "->";
-        color: var(--brand-deep);
+        color: #8ddfb1;
         font-weight: 700;
-      }
-
-      .legal-card {
-        padding: 28px;
-      }
-
-      .legal-card h2 {
-        font-size: clamp(1.6rem, 3vw, 2.2rem);
-      }
-
-      .legal-card p + p,
-      .legal-card p + ul,
-      .legal-card ul + p {
-        margin-top: 14px;
       }
 
       .support-panel {
         margin-top: 24px;
         padding: 18px;
         border-radius: 22px;
-        background: rgba(31, 138, 120, 0.08);
-        border: 1px solid rgba(31, 138, 120, 0.12);
+        border: 1px solid rgba(72, 240, 139, 0.12);
+        background: rgba(13, 26, 19, 0.72);
       }
 
       .support-panel strong {
         display: block;
         margin-bottom: 8px;
-        color: var(--ink-strong);
+        color: var(--text);
       }
 
       .footer {
@@ -631,30 +609,54 @@ function layout(title: string, description: string, body: string): string {
         flex-wrap: wrap;
         justify-content: space-between;
         gap: 18px;
-        margin-top: 24px;
-        padding: 24px 28px;
+        margin-top: 28px;
+        padding: 24px 26px;
       }
 
       .footer-copy {
-        max-width: 520px;
+        max-width: 560px;
       }
 
-      .footer-links {
-        align-items: center;
+      .footer-copy p {
+        margin-top: 14px;
       }
 
-      .footer-link {
-        padding: 10px 14px;
-        border-radius: 999px;
-        border: 1px solid var(--line);
-        background: rgba(255, 255, 255, 0.52);
+      @keyframes drift {
+        0%,
+        100% {
+          transform: translate3d(0, 0, 0) scale(1);
+        }
+
+        50% {
+          transform: translate3d(1.5%, -1.5%, 0) scale(1.04);
+        }
       }
 
       @media (max-width: 980px) {
-        .hero,
-        .story-grid,
+        .site-header,
+        .proof-strip,
+        .step-grid,
+        .showcase-grid,
+        .pricing-shell,
         .legal-shell {
           grid-template-columns: 1fr;
+        }
+
+        .site-header {
+          padding: 18px;
+          border-radius: 30px;
+        }
+
+        .site-nav {
+          justify-content: flex-start;
+        }
+
+        .header-action {
+          justify-self: start;
+        }
+
+        .hero {
+          min-height: auto;
         }
 
         .legal-sidebar {
@@ -665,35 +667,67 @@ function layout(title: string, description: string, body: string): string {
       @media (max-width: 720px) {
         .page-shell {
           width: min(100%, calc(100% - 20px));
-          padding: 20px 0 48px;
+          padding: 16px 0 48px;
         }
 
-        .site-header,
+        .site-header {
+          top: 12px;
+        }
+
+        .brand-note {
+          display: none;
+        }
+
+        .hero-shell {
+          padding: 48px 22px 30px;
+          border-radius: 28px;
+        }
+
+        .site-nav,
+        .cta-group,
+        .footer-links {
+          flex-direction: column;
+          align-items: stretch;
+        }
+
+        .button,
+        .nav-link,
+        .footer-link {
+          width: 100%;
+          justify-content: center;
+        }
+
+        .proof-card,
+        .step-card,
+        .feature-card,
+        .pricing-card,
+        .legal-sidebar,
+        .legal-card,
+        .footer {
+          padding: 22px;
+          border-radius: 24px;
+        }
+
         .footer {
           flex-direction: column;
           align-items: stretch;
         }
 
-        .hero-copy,
-        .hero-card,
-        .section-card,
-        .legal-sidebar,
-        .legal-card,
-        .footer {
-          padding: 24px;
-          border-radius: 24px;
+        .hero-title {
+          font-size: clamp(2.7rem, 15vw, 3.9rem);
+        }
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        html {
+          scroll-behavior: auto;
         }
 
-        .signal-grid,
-        .feature-grid,
-        .stat-grid {
-          grid-template-columns: 1fr;
-        }
-
-        .button,
-        .header-link,
-        .footer-link {
-          width: 100%;
+        *,
+        *::before,
+        *::after {
+          animation: none !important;
+          transition: none !important;
         }
       }
     </style>
@@ -704,14 +738,12 @@ function layout(title: string, description: string, body: string): string {
 </html>`;
 }
 
-function renderSiteHeader(variant: "home" | "legal" = "home"): string {
+function renderSiteHeader(variant: "home" | "legal" = "home", actionHref?: string): string {
   const links =
     variant === "home"
       ? [
-          { href: "#how-it-works", label: "How it works" },
-          { href: "#safeguards", label: "Safeguards" },
-          { href: "/terms", label: "Terms" },
-          { href: "/privacy", label: "Privacy" }
+          { href: "#how-it-works", label: "How It Works" },
+          { href: "#pricing", label: "Pricing" }
         ]
       : [
           { href: "/", label: "Home" },
@@ -719,16 +751,20 @@ function renderSiteHeader(variant: "home" | "legal" = "home"): string {
           { href: "/privacy", label: "Privacy" }
         ];
 
+  const action =
+    variant === "home"
+      ? `<a class="button button-primary button-small header-action" href="${escapeHtml(actionHref ?? "#pricing")}">Start Trading</a>`
+      : `<a class="button button-secondary button-small header-action" href="/">Back Home</a>`;
+
   return `<header class="site-header">
     <div class="brand-lockup">
       <span class="brand-mark">Ifyrt</span>
-      <p class="brand-note">Telegram-native trading simulation with deterministic backtests, live paper runs, and infrastructure built to keep real execution isolated.</p>
+      <span class="brand-note">Telegram-native strategy simulation and paper execution</span>
     </div>
-    <nav class="header-links" aria-label="Primary">
-      ${links
-        .map((link) => `<a class="header-link" href="${link.href}">${link.label}</a>`)
-        .join("")}
+    <nav class="site-nav" aria-label="Primary">
+      ${links.map((link) => `<a class="nav-link" href="${link.href}">${link.label}</a>`).join("")}
     </nav>
+    ${action}
   </header>`;
 }
 
@@ -736,7 +772,7 @@ function renderFooter(supportEmail: string): string {
   return `<footer class="panel footer">
     <div class="footer-copy">
       <span class="brand-mark">Ifyrt</span>
-      <p class="mini-note">Built for simulation first. The public web surface explains the product, handles billing entry, and points users back to Telegram where the workflow lives.</p>
+      <p>Simulation stays first, billing stays separate, and Telegram stays the control plane. The public site should feel calm because the real product flow lives elsewhere.</p>
     </div>
     <div class="footer-links">
       <a class="footer-link" href="/terms">Terms</a>
@@ -748,145 +784,140 @@ function renderFooter(supportEmail: string): string {
 
 export function renderLandingPage(options: LandingOptions): string {
   const ctaHref = options.stripeUrl ?? options.botUrl;
-  const ctaLabel = options.stripeUrl ? "Start Subscription" : "Open Telegram Bot";
+  const pricingPrimaryLabel = options.stripeUrl ? "Start Trading" : "Open Telegram";
+  const pricingSecondaryHref = options.stripeUrl ? options.botUrl : "/terms";
+  const pricingSecondaryLabel = options.stripeUrl ? "Open Bot" : "Read Terms";
 
   return layout(
     "Ifyrt",
-    "Telegram-native trading simulation with deterministic backtests, live paper trading, Stripe billing, and strict separation from live execution.",
+    "Telegram-native trading simulation with deterministic backtests, paper execution, and billing that stays separate from the trading workflow.",
     `<main class="page-shell">
-      ${renderSiteHeader("home")}
+      ${renderSiteHeader("home", ctaHref)}
+
       <section class="hero">
-        <article class="panel panel-strong hero-copy">
-          <span class="eyebrow">Telegram-native trading simulation</span>
-          <h1>Pressure-test every strategy before real money ever meets the market.</h1>
-          <p class="hero-lead">Ifyrt keeps the workflow focused: explore ideas in Telegram, replay them through deterministic backtests, move into live paper simulation, and manage billing without turning the public site into a bloated dashboard.</p>
+        <div class="panel panel-strong hero-shell">
+          <span class="hero-badge">Telegram-native strategy simulator</span>
+          <h1 class="hero-title">Algorithmic trading workflows, <span>controlled from Telegram</span></h1>
+          <p class="hero-lead">The reference design gets the mood right: dark, focused, and confident. Ifyrt now leans into that same feel while keeping the product honest - backtests, live paper sessions, and access controls without a loud fake-dashboard landing page.</p>
           <div class="cta-group">
-            <a class="button button-primary" href="${escapeHtml(ctaHref)}">${escapeHtml(ctaLabel)}</a>
-            <a class="button button-secondary" href="${escapeHtml(options.botUrl)}">Open Telegram</a>
+            <a class="button button-primary" href="${escapeHtml(ctaHref)}">Start Trading</a>
+            <a class="button button-secondary" href="#how-it-works">How It Works</a>
           </div>
-          <p class="mini-note">Simulation is the flagship experience. Live trading remains gated, isolated, and deliberately separate from anything exposed on this page.</p>
-          <div class="pill-row" aria-label="Highlights">
-            <span class="pill">Deterministic backtests</span>
-            <span class="pill">Real-time paper simulation</span>
-            <span class="pill">Stripe-managed access</span>
-            <span class="pill">Railway-hosted services</span>
+          <p class="mini-note">Simulation comes first. Real execution remains gated, isolated, and deliberately outside the public web layer.</p>
+          <div class="proof-strip" aria-label="Highlights">
+            <article class="proof-card">
+              <strong>Deterministic backtests</strong>
+              <span>Replay strategy behavior with repeatable inputs instead of rough intuition and screenshots.</span>
+            </article>
+            <article class="proof-card">
+              <strong>Live paper sessions</strong>
+              <span>Move from historical research into real-time simulation without changing the control surface.</span>
+            </article>
+            <article class="proof-card">
+              <strong>Separated live rails</strong>
+              <span>Billing, orchestration, and any real execution concerns stay fenced off by design.</span>
+            </article>
           </div>
-        </article>
-        <aside class="hero-card" aria-label="Workflow overview">
-          <span class="panel-label">Inside the workflow</span>
-          <div class="command-display">
-            <div class="command-line">
-              <strong>/backtest</strong>
-              <p>Replay historical conditions with the same execution contract the platform uses elsewhere.</p>
-            </div>
-            <div class="command-line">
-              <strong>/simulate</strong>
-              <p>Move from research into live paper runs fed by hosted market infrastructure.</p>
-            </div>
-            <div class="command-line">
-              <strong>/status</strong>
-              <p>Keep control in Telegram while the workers, orchestration, and billing hooks stay behind the scenes.</p>
-            </div>
-          </div>
-          <div class="signal-grid">
-            <div class="signal-card">
-              <strong>Telegram first</strong>
-              <p>The chat interface stays authoritative instead of becoming a thin wrapper around a web app.</p>
-            </div>
-            <div class="signal-card">
-              <strong>Live stays isolated</strong>
-              <p>Nothing on this page executes trades, stores keys, or bypasses the platform safeguards.</p>
-            </div>
-          </div>
-        </aside>
-      </section>
-
-      <section class="panel stat-band section">
-        <div class="stat-grid">
-          <article class="stat-card">
-            <small>Execution model</small>
-            <strong>Shared contracts keep simulation logic aligned with the rest of the platform.</strong>
-          </article>
-          <article class="stat-card">
-            <small>Control plane</small>
-            <strong>Users stay in Telegram for actions, alerts, and product flow.</strong>
-          </article>
-          <article class="stat-card">
-            <small>Infrastructure</small>
-            <strong>Hosted services handle routing, workers, and payment state where they belong.</strong>
-          </article>
-          <article class="stat-card">
-            <small>Risk posture</small>
-            <strong>Simulation comes first and live execution is intentionally fenced off.</strong>
-          </article>
         </div>
       </section>
 
-      <section class="story-grid section" id="how-it-works">
-        <article class="panel section-card section-card-warm">
-          <span class="kicker">Why it feels different</span>
-          <h2>Telegram on the surface. Deterministic systems underneath.</h2>
-          <p class="hero-lead">The public site exists to orient users, explain the product, and provide clean billing and policy links. The actual experience lives in a tighter loop: chat commands, hosted orchestration, simulation workers, and carefully separated execution services.</p>
-          <ul class="list-tight">
-            <li>Research ideas without pretending paper gains equal live readiness.</li>
-            <li>Move from historical replay into real-time simulation without changing the interface.</li>
-            <li>Keep operational complexity off the public surface and inside the backend services designed for it.</li>
-          </ul>
-        </article>
-        <div class="stack">
-          <article class="panel section-card">
+      <section class="section" id="how-it-works">
+        <div class="section-intro">
+          <span class="kicker">How It Works</span>
+          <h2>One quiet interface. The heavy infrastructure stays underneath.</h2>
+          <p>Instead of piling every concept into the hero, the site now leads with a single promise and then walks through the product in a tighter, calmer loop.</p>
+        </div>
+        <div class="step-grid">
+          <article class="panel step-card">
             <span class="number-pill">01</span>
-            <h3>Shape the idea</h3>
-            <p class="mini-note">Use Telegram commands to kick off backtests, inspect strategy behavior, and tighten your assumptions before a market is involved.</p>
+            <h3>Start in Telegram</h3>
+            <p>Kick off the workflow where the product actually lives. No sprawling onboarding flow and no fake complexity before you even test an idea.</p>
           </article>
-          <article class="panel section-card">
+          <article class="panel step-card">
             <span class="number-pill">02</span>
-            <h3>Simulate the pressure</h3>
-            <p class="mini-note">Run real-time paper sessions against hosted data and execution plumbing so you can see how the strategy behaves in motion.</p>
+            <h3>Backtest, then simulate</h3>
+            <p>Move from deterministic historical replay into live paper sessions using the same platform contracts that support the rest of the system.</p>
           </article>
-          <article class="panel section-card">
+          <article class="panel step-card">
             <span class="number-pill">03</span>
-            <h3>Keep the boundaries clear</h3>
-            <p class="mini-note">Billing, orchestration, and user state stay server-side. Live execution remains a separate, protected concern rather than an accidental side effect.</p>
+            <h3>Keep boundaries intact</h3>
+            <p>Payments, orchestration, and any sensitive execution workflows stay server-side where they belong instead of leaking into the marketing surface.</p>
           </article>
         </div>
       </section>
 
-      <section class="section" aria-label="Key capabilities">
-        <div class="feature-grid">
-          <article class="feature-card">
-            <span class="kicker">Backtests</span>
-            <h3>Repeatability you can trust</h3>
-            <p>Deterministic historical runs make it easier to compare strategy changes without the noise of inconsistent execution behavior.</p>
+      <section class="section" aria-label="Product overview">
+        <div class="showcase-grid">
+          <article class="panel feature-card">
+            <span class="kicker">Inside The Flow</span>
+            <h3>Short commands on the surface, serious systems underneath.</h3>
+            <div class="signal-cluster">
+              <div class="command-line">
+                <strong>/backtest</strong>
+                <p>Replay historical conditions and compare strategies against stable execution logic.</p>
+              </div>
+              <div class="command-line">
+                <strong>/simulate</strong>
+                <p>Run live paper sessions against hosted market infrastructure without shifting into a different product.</p>
+              </div>
+              <div class="command-line">
+                <strong>/status</strong>
+                <p>Stay in Telegram while workers, payment hooks, and routing stay in the backend where they are easier to trust.</p>
+              </div>
+            </div>
           </article>
-          <article class="feature-card">
-            <span class="kicker">Paper trading</span>
-            <h3>Practice against live conditions</h3>
-            <p>Real-time simulation gives ideas a proving ground before any live workflow is even considered.</p>
-          </article>
-          <article class="feature-card">
-            <span class="kicker">Billing</span>
-            <h3>Clean access with Stripe</h3>
-            <p>Subscriptions and checkout live in a dedicated payment surface instead of getting tangled up inside the bot or workers.</p>
+          <article class="panel feature-card">
+            <span class="kicker">Safeguards</span>
+            <h3>This page never becomes the trading engine.</h3>
+            <p>Ifyrt is strongest when the boundaries are obvious. The web layer orients people, handles billing entry, and then gets out of the way.</p>
+            <ul class="list-tight">
+              <li>No trade execution happens from this public page.</li>
+              <li>No exchange keys are collected or managed here.</li>
+              <li>Simulation remains the flagship experience.</li>
+              <li>Support stays reachable at <a href="mailto:${escapeHtml(options.supportEmail)}">${escapeHtml(options.supportEmail)}</a>.</li>
+            </ul>
           </article>
         </div>
       </section>
 
-      <section class="story-grid section" id="safeguards">
-        <article class="panel section-card section-card-ink">
-          <span class="kicker">Safety by design</span>
-          <h2>Real execution is not treated like a casual upgrade path.</h2>
-          <p>Ifyrt is built around a strict separation between learning, simulating, and any live activity. That boundary is part of the product philosophy, not a note buried in the footer.</p>
-        </article>
-        <article class="panel section-card section-card-warm">
-          <span class="kicker">What that means</span>
-          <ul class="list-tight">
-            <li>This site does not execute trades or collect exchange keys.</li>
-            <li>Simulation remains the primary experience and the clearest path to product value.</li>
-            <li>Hosted services own orchestration, worker isolation, and payment state.</li>
-            <li>Users always have a support path at <a href="mailto:${escapeHtml(options.supportEmail)}">${escapeHtml(options.supportEmail)}</a>.</li>
-          </ul>
-        </article>
+      <section class="section" id="pricing">
+        <div class="pricing-shell">
+          <article class="panel pricing-card">
+            <span class="kicker">Pricing</span>
+            <h2>Access stays simple because the product does not need a noisy web shell.</h2>
+            <p>Open the bot, validate ideas in simulation, and use Stripe only when billing is needed. The site stays focused on clarity instead of pretending to be a full dashboard.</p>
+            <div class="price-points">
+              <div class="price-point">
+                <div>
+                  <strong>Telegram-first onboarding</strong>
+                  <p>The primary call to action still sends people into the product's real control surface instead of trapping them in marketing pages.</p>
+                </div>
+              </div>
+              <div class="price-point">
+                <div>
+                  <strong>Stripe-managed billing</strong>
+                  <p>Checkout and subscription state remain isolated from the simulation workflow, which keeps the architecture cleaner and safer.</p>
+                </div>
+              </div>
+              <div class="price-point">
+                <div>
+                  <strong>Simulation before risk</strong>
+                  <p>The product value is clearest in research and paper execution long before live trading is ever considered.</p>
+                </div>
+              </div>
+            </div>
+          </article>
+          <aside class="panel panel-strong pricing-card">
+            <span class="price-callout">Ready when you are</span>
+            <h3>Start with the same focused flow the platform is designed around.</h3>
+            <p>${options.stripeUrl ? "Billing opens in Stripe and the product loops you back toward Telegram, where the workflow actually belongs." : "Open the bot directly and start from Telegram without forcing the web page to do more than it should."}</p>
+            <div class="cta-group">
+              <a class="button button-primary" href="${escapeHtml(ctaHref)}">${escapeHtml(pricingPrimaryLabel)}</a>
+              <a class="button button-secondary" href="${escapeHtml(pricingSecondaryHref)}">${escapeHtml(pricingSecondaryLabel)}</a>
+            </div>
+            <p class="mini-note">Questions before you jump in? Email <a href="mailto:${escapeHtml(options.supportEmail)}">${escapeHtml(options.supportEmail)}</a>.</p>
+          </aside>
+        </div>
       </section>
 
       ${renderFooter(options.supportEmail)}
