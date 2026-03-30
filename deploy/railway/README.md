@@ -80,3 +80,4 @@ Set these on the services that need them:
 - The workflow JSON in `n8n/workflows/01-ifyrt-gateway-router.json` expects the n8n service variables above.
 - The SQL helpers in `supabase/schema.sql` are meant to be run before importing the workflow.
 - `RAILWAY_PUBLIC_DOMAIN` is stored in `.env` as `ifyrt-production.up.railway.app`.
+- If a Railway service uses a generic name such as `ifyrt`, set `IFYRT_SERVICE_TARGET` to the intended app service name like `ifyrt-bot` or `ifyrt-sim-worker`.
