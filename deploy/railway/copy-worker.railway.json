@@ -1,0 +1,22 @@
+{
+  "$schema": "https://railway.com/railway.schema.json",
+  "build": {
+    "builder": "RAILPACK",
+    "buildCommand": "npm run build --workspace @ifyrt/contracts && npm run build --workspace @ifyrt/service-core && npm run build --workspace @ifyrt/copy-worker",
+    "watchPatterns": [
+      "package.json",
+      "package-lock.json",
+      "tsconfig.base.json",
+      "apps/copy-worker/**",
+      "packages/contracts/**",
+      "packages/service-core/**"
+    ]
+  },
+  "deploy": {
+    "startCommand": "node apps/copy-worker/dist/index.js",
+    "healthcheckPath": "/health",
+    "healthcheckTimeout": 120,
+    "restartPolicyType": "ON_FAILURE",
+    "restartPolicyMaxRetries": 10
+  }
+}

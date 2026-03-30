@@ -1,0 +1,21 @@
+{
+  "$schema": "https://railway.com/railway.schema.json",
+  "build": {
+    "builder": "RAILPACK",
+    "buildCommand": "npm run build --workspace @ifyrt/service-core && npm run build --workspace @ifyrt/payments",
+    "watchPatterns": [
+      "package.json",
+      "package-lock.json",
+      "tsconfig.base.json",
+      "apps/payments/**",
+      "packages/service-core/**"
+    ]
+  },
+  "deploy": {
+    "startCommand": "node apps/payments/dist/index.js",
+    "healthcheckPath": "/health",
+    "healthcheckTimeout": 120,
+    "restartPolicyType": "ON_FAILURE",
+    "restartPolicyMaxRetries": 10
+  }
+}
