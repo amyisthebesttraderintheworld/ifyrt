@@ -8,6 +8,7 @@
   ],
   "scripts": {
     "build": "npm run build --workspace @ifyrt/contracts && npm run build --workspace @ifyrt/service-core && npm run build --workspace @ifyrt/simulation-core && npm run build --workspace @ifyrt/bot && npm run build --workspace @ifyrt/sim-worker && npm run build --workspace @ifyrt/live-exec && npm run build --workspace @ifyrt/market-ingestor && npm run build --workspace @ifyrt/copy-worker && npm run build --workspace @ifyrt/payments",
+    "start": "node scripts/railway-start.mjs",
     "dev:bot": "npm run dev --workspace @ifyrt/bot",
     "dev:sim": "npm run dev --workspace @ifyrt/sim-worker",
     "test": "node --import tsx --test packages/simulation-core/test/backtest.test.ts packages/simulation-core/test/realtime.test.ts"
