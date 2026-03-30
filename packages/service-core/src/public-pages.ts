@@ -772,7 +772,7 @@ function renderFooter(supportEmail: string): string {
   return `<footer class="panel footer">
     <div class="footer-copy">
       <span class="brand-mark">Ifyrt</span>
-      <p>Simulation stays first, billing stays separate, and Telegram stays the control plane. The public site should feel calm because the real product flow lives elsewhere.</p>
+      <p>Professional-grade strategy simulation and algorithmic trading execution, managed entirely through Telegram. Focus on your edge while we handle the infrastructure.</p>
     </div>
     <div class="footer-links">
       <a class="footer-link" href="/terms">Terms</a>
@@ -784,38 +784,45 @@ function renderFooter(supportEmail: string): string {
 
 export function renderLandingPage(options: LandingOptions): string {
   const ctaHref = options.stripeUrl ?? options.botUrl;
-  const pricingPrimaryLabel = options.stripeUrl ? "Start Trading" : "Open Telegram";
-  const pricingSecondaryHref = options.stripeUrl ? options.botUrl : "/terms";
-  const pricingSecondaryLabel = options.stripeUrl ? "Open Bot" : "Read Terms";
+  const hasStripe = Boolean(options.stripeUrl);
+
+  const heroPrimaryLabel = hasStripe ? "Upgrade to Pro" : "Start Free Trial";
+  const heroPrimaryHref = ctaHref;
+
+  const pricingPrimaryLabel = hasStripe ? "Upgrade to Pro" : "Open Telegram";
+  const pricingPrimaryHref = ctaHref;
+
+  const pricingSecondaryLabel = hasStripe ? "Start Free Trial" : "How It Works";
+  const pricingSecondaryHref = hasStripe ? options.botUrl : "#how-it-works";
 
   return layout(
     "Ifyrt",
-    "Telegram-native trading simulation with deterministic backtests, paper execution, and billing that stays separate from the trading workflow.",
+    "Telegram-native trading simulation with deterministic backtests, paper execution, and professional-grade strategy validation.",
     `<main class="page-shell">
       ${renderSiteHeader("home", ctaHref)}
 
       <section class="hero">
         <div class="panel panel-strong hero-shell">
-          <span class="hero-badge">Telegram-native strategy simulator</span>
-          <h1 class="hero-title">Algorithmic trading workflows, <span>controlled from Telegram</span></h1>
-          <p class="hero-lead">The reference design gets the mood right: dark, focused, and confident. Ifyrt now leans into that same feel while keeping the product honest - backtests, live paper sessions, and access controls without a loud fake-dashboard landing page.</p>
+          <span class="hero-badge">7-Day Free Trial Available</span>
+          <h1 class="hero-title">Algorithmic trading, <span>orchestrated from Telegram</span></h1>
+          <p class="hero-lead">High-fidelity backtesting and real-time paper trading for serious strategy development. Start with a <strong>7-day free trial</strong> and validate your ideas before transitioning to live execution.</p>
           <div class="cta-group">
-            <a class="button button-primary" href="${escapeHtml(ctaHref)}">Start Trading</a>
+            <a class="button button-primary" href="${escapeHtml(heroPrimaryHref)}">${escapeHtml(heroPrimaryLabel)}</a>
             <a class="button button-secondary" href="#how-it-works">How It Works</a>
           </div>
-          <p class="mini-note">Simulation comes first. Real execution remains gated, isolated, and deliberately outside the public web layer.</p>
+          <p class="mini-note">Full access to simulation and backtesting during your trial. Live trading is isolated behind secure risk controls.</p>
           <div class="proof-strip" aria-label="Highlights">
             <article class="proof-card">
               <strong>Deterministic backtests</strong>
-              <span>Replay strategy behavior with repeatable inputs instead of rough intuition and screenshots.</span>
+              <span>Verify strategy performance with repeatable historical replays and precise fill modeling.</span>
             </article>
             <article class="proof-card">
               <strong>Live paper sessions</strong>
-              <span>Move from historical research into real-time simulation without changing the control surface.</span>
+              <span>Bridge the gap between research and reality with real-time simulation using live market data.</span>
             </article>
             <article class="proof-card">
-              <strong>Separated live rails</strong>
-              <span>Billing, orchestration, and any real execution concerns stay fenced off by design.</span>
+              <strong>Secure live execution</strong>
+              <span>Deploy to live markets with isolated key management and automated risk safeguards.</span>
             </article>
           </div>
         </div>
@@ -824,24 +831,24 @@ export function renderLandingPage(options: LandingOptions): string {
       <section class="section" id="how-it-works">
         <div class="section-intro">
           <span class="kicker">How It Works</span>
-          <h2>One quiet interface. The heavy infrastructure stays underneath.</h2>
-          <p>Instead of piling every concept into the hero, the site now leads with a single promise and then walks through the product in a tighter, calmer loop.</p>
+          <h2>A powerful trading engine behind a simple interface.</h2>
+          <p>Ifyrt provides the tools you need to research, test, and execute algorithmic strategies without the overhead of traditional trading platforms.</p>
         </div>
         <div class="step-grid">
           <article class="panel step-card">
             <span class="number-pill">01</span>
-            <h3>Start in Telegram</h3>
-            <p>Kick off the workflow where the product actually lives. No sprawling onboarding flow and no fake complexity before you even test an idea.</p>
+            <h3>Connect in Telegram</h3>
+            <p>Launch your first simulation in seconds. Telegram serves as your unified command center for deployment and monitoring.</p>
           </article>
           <article class="panel step-card">
             <span class="number-pill">02</span>
-            <h3>Backtest, then simulate</h3>
-            <p>Move from deterministic historical replay into live paper sessions using the same platform contracts that support the rest of the system.</p>
+            <h3>Backtest & Validate</h3>
+            <p>Verify your edge with high-fidelity historical data and order-book-aware simulation before committing capital.</p>
           </article>
           <article class="panel step-card">
             <span class="number-pill">03</span>
-            <h3>Keep boundaries intact</h3>
-            <p>Payments, orchestration, and any sensitive execution workflows stay server-side where they belong instead of leaking into the marketing surface.</p>
+            <h3>Execute with Confidence</h3>
+            <p>Transition to paper trading or live execution using identical logic, protected by server-side risk controls.</p>
           </article>
         </div>
       </section>
@@ -849,32 +856,32 @@ export function renderLandingPage(options: LandingOptions): string {
       <section class="section" aria-label="Product overview">
         <div class="showcase-grid">
           <article class="panel feature-card">
-            <span class="kicker">Inside The Flow</span>
-            <h3>Short commands on the surface, serious systems underneath.</h3>
+            <span class="kicker">Integrated Workflow</span>
+            <h3>Command-driven precision for every stage of your strategy.</h3>
             <div class="signal-cluster">
               <div class="command-line">
                 <strong>/backtest</strong>
-                <p>Replay historical conditions and compare strategies against stable execution logic.</p>
+                <p>Execute historical simulations to refine entry logic and risk parameters.</p>
               </div>
               <div class="command-line">
                 <strong>/simulate</strong>
-                <p>Run live paper sessions against hosted market infrastructure without shifting into a different product.</p>
+                <p>Monitor live paper trading sessions with real-time exchange data and fees.</p>
               </div>
               <div class="command-line">
                 <strong>/status</strong>
-                <p>Stay in Telegram while workers, payment hooks, and routing stay in the backend where they are easier to trust.</p>
+                <p>Track performance, open positions, and subscription state instantly from your chat.</p>
               </div>
             </div>
           </article>
           <article class="panel feature-card">
-            <span class="kicker">Safeguards</span>
-            <h3>This page never becomes the trading engine.</h3>
-            <p>Ifyrt is strongest when the boundaries are obvious. The web layer orients people, handles billing entry, and then gets out of the way.</p>
+            <span class="kicker">Architecture</span>
+            <h3>Designed for reliability and performance.</h3>
+            <p>Ifyrt is built with a clear separation between research and execution, ensuring your live funds are always protected by robust safeguards.</p>
             <ul class="list-tight">
-              <li>No trade execution happens from this public page.</li>
-              <li>No exchange keys are collected or managed here.</li>
-              <li>Simulation remains the flagship experience.</li>
-              <li>Support stays reachable at <a href="mailto:${escapeHtml(options.supportEmail)}">${escapeHtml(options.supportEmail)}</a>.</li>
+              <li>High-fidelity matching engine with real slippage modeling.</li>
+              <li>Secure, encrypted API key management via Supabase Vault.</li>
+              <li>Subscription-based access with transparent pricing.</li>
+              <li>Direct support available at <a href="mailto:${escapeHtml(options.supportEmail)}">${escapeHtml(options.supportEmail)}</a>.</li>
             </ul>
           </article>
         </div>
@@ -884,38 +891,38 @@ export function renderLandingPage(options: LandingOptions): string {
         <div class="pricing-shell">
           <article class="panel pricing-card">
             <span class="kicker">Pricing</span>
-            <h2>Access stays simple because the product does not need a noisy web shell.</h2>
-            <p>Open the bot, validate ideas in simulation, and use Stripe only when billing is needed. The site stays focused on clarity instead of pretending to be a full dashboard.</p>
+            <h2>Simple, transparent pricing for serious traders.</h2>
+            <p>Start with a 7-day free trial of all simulation features. Upgrade to Pro for live execution and full platform capabilities.</p>
             <div class="price-points">
               <div class="price-point">
                 <div>
-                  <strong>Telegram-first onboarding</strong>
-                  <p>The primary call to action still sends people into the product's real control surface instead of trapping them in marketing pages.</p>
+                  <strong>7-Day Free Trial</strong>
+                  <p>Full access to backtesting and real-time paper simulation. No credit card required to start in Telegram.</p>
                 </div>
               </div>
               <div class="price-point">
                 <div>
-                  <strong>Stripe-managed billing</strong>
-                  <p>Checkout and subscription state remain isolated from the simulation workflow, which keeps the architecture cleaner and safer.</p>
+                  <strong>Pro Subscription — $6.99/month</strong>
+                  <p>Unlocks live trading execution, secure key management, and professional risk controls.</p>
                 </div>
               </div>
               <div class="price-point">
                 <div>
-                  <strong>Simulation before risk</strong>
-                  <p>The product value is clearest in research and paper execution long before live trading is ever considered.</p>
+                  <strong>Unified Command Surface</strong>
+                  <p>Control your entire trading lifecycle through a streamlined, professional Telegram interface.</p>
                 </div>
               </div>
             </div>
           </article>
           <aside class="panel panel-strong pricing-card">
-            <span class="price-callout">Ready when you are</span>
-            <h3>Start with the same focused flow the platform is designed around.</h3>
-            <p>${options.stripeUrl ? "Billing opens in Stripe and the product loops you back toward Telegram, where the workflow actually belongs." : "Open the bot directly and start from Telegram without forcing the web page to do more than it should."}</p>
+            <span class="price-callout">Ready to begin?</span>
+            <h3>Join the future of algorithmic strategy development.</h3>
+            <p>${hasStripe ? "Upgrade to Pro for $6.99/month to gain full access to live execution and professional risk controls." : "Open the bot and start your 7-day trial immediately with full access to simulation features."}</p>
             <div class="cta-group">
-              <a class="button button-primary" href="${escapeHtml(ctaHref)}">${escapeHtml(pricingPrimaryLabel)}</a>
+              <a class="button button-primary" href="${escapeHtml(pricingPrimaryHref)}">${escapeHtml(pricingPrimaryLabel)}</a>
               <a class="button button-secondary" href="${escapeHtml(pricingSecondaryHref)}">${escapeHtml(pricingSecondaryLabel)}</a>
             </div>
-            <p class="mini-note">Questions before you jump in? Email <a href="mailto:${escapeHtml(options.supportEmail)}">${escapeHtml(options.supportEmail)}</a>.</p>
+            <p class="mini-note">Have questions? Contact our team at <a href="mailto:${escapeHtml(options.supportEmail)}">${escapeHtml(options.supportEmail)}</a>.</p>
           </aside>
         </div>
       </section>
@@ -1018,7 +1025,7 @@ export function renderPrivacyPage(options: Pick<LandingOptions, "supportEmail">)
           </section>
           <section class="panel legal-card" id="security">
             <h2>Security</h2>
-            <p>Ifyrt is designed to keep orchestration and sensitive workflows on hosted backend services instead of exposing them through lightweight public web pages.</p>
+            <p>Ifyrt employs industry-standard security practices, ensuring all sensitive data and trading operations are handled within our secure, isolated backend infrastructure.</p>
           </section>
           <section class="panel legal-card" id="privacy-contact">
             <h2>Contact</h2>

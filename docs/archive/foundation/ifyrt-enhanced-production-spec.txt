@@ -1,192 +1,192 @@
-IFYRT / TriFi — Production Design Specification (Enhanced)
-0. Purpose
-This document defines a production-ready, multi-tenant trading simulation and execution platform with strict separation between simulation and live trading. It is designed to be immediately consumable by an engineering agent (e.g., Codex) and includes:
-• Concrete service boundaries n- Deterministic simulation guarantees
-• Realistic execution modeling
-• Security-first live trading design
-• Event-driven orchestration
-This version restores critical design intent, reasoning, and system philosophy that were previously stripped out.
-1. Core Philosophy (Non-Negotiables)
-1.1 Simulation is the Product
-Simulation is not a feature — it is the primary product surface.
-• Must be deterministic (same inputs → same outputs)
-• Must be high-fidelity (real order book behavior)
-• Must be behaviorally identical to live execution
-1.2 Parity Principle
-If a strategy works in simulation, it should behave the same in live — within market variance.
-Achieved via:
-• Shared execution interface
-• Identical order semantics
-• Same fee + slippage modeling
-1.3 Hard Separation: Simulation vs Live
-LayerSimulationLiveExecutionSimulated engineExchange APIsFundsVirtualRealKeysNoneRequiredRiskZeroReal 
-No shared state. No crossover. Ever.
-2. System Architecture
-2.1 High-Level Topology
-Telegram Bot ↓ API Gateway (Stateless) ↓ Event Bus (n8n + Realtime) ↓ Core Services: - Simulation Engine - Market Data Ingestor - Strategy Runtime - Live Execution Engine - Copy Trading Layer ↓ Persistence (Supabase) ↓ Optional Dashboard (Vercel) 
-2.2 Architectural Style
-• Event-driven
-• Stateless services
-• Horizontal scaling
-• Worker isolation per simulation
-3. Telegram Control Plane
-3.1 Role
+# Ifyrt / TriFi — Production Design Specification
+
+## 0. Purpose
+
+This document defines a production-ready, multi-tenant trading simulation and execution platform with strict separation between simulation and live trading. It covers:
+- Concrete service boundaries
+- Deterministic simulation guarantees
+- Realistic execution modeling
+- Security-first live trading design
+- Event-driven orchestration
+
+## 1. Core Philosophy
+
+### 1.1 Simulation is the Product
+Simulation is the primary product surface.
+- Must be deterministic (same inputs → same outputs)
+- Must be high-fidelity (real order book behavior)
+- Must be behaviorally identical to live execution
+
+### 1.2 Parity Principle
+Strategies should behave the same in live trading as they do in simulation, within market variance.
+- Shared execution interface
+- Identical order semantics
+- Consistent fee and slippage modeling
+
+### 1.3 Strict Separation
+There is no shared state or crossover between simulation and live execution.
+
+| Layer | Simulation | Live |
+| :--- | :--- | :--- |
+| Execution | Simulated engine | Exchange APIs |
+| Funds | Virtual | Real |
+| Keys | None | Required |
+| Risk | Zero | Real |
+
+## 2. System Architecture
+
+### 2.1 High-Level Topology
+Control flows from the Telegram Bot through a stateless API Gateway, then via n8n and Realtime event buses to core services:
+- Simulation Engine
+- Market Data Ingestor
+- Strategy Runtime
+- Live Execution Engine
+- Copy Trading Layer
+- Persistence (Supabase)
+- Optional Dashboard (Vercel)
+
+### 2.2 Architectural Style
+- Event-driven and stateless services
+- Horizontal scaling
+- Worker isolation per simulation
+
+## 3. Telegram Control Plane
+
+### 3.1 Role
 Telegram is the authoritative control interface.
-Why:
-• Zero-friction UX
-• No additional auth surface
-• Forces backend consistency
-3.2 Responsibilities
-• Parse commands
-• Emit structured events
-• Never execute logic
-3.3 Event Contract
-All commands emit a strict event schema:
-interface IfyrtEvent { event_id: string; event_type: string; timestamp: string; user: { telegram_id: number }; payload: Record<string, any>; } 
-4. Event Orchestration Layer (n8n)
-4.1 Role
-Acts as the central nervous system.
-Responsibilities:
-• Route events
-• Enforce subscription
-• Trigger workers
-• Handle retries
-4.2 Critical Insight
-No service calls another service directly.
-All communication flows through:
-• Supabase (state)
-• n8n (control)
-5. Market Data Layer
-5.1 Requirements
-• Real-time ingestion (WebSocket)
-• Historical OHLCV storage
-• Order book reconstruction
-5.2 Design Choice
-Order book stored as JSONB initially for speed of development.
-Tradeoff:
-• ✔ Fast iteration
-• ✖ Not optimal at scale (future: TimescaleDB)
-6. Simulation Engine (Core)
-6.1 Execution Model
-Market Data → Strategy → Signal → Matching Engine → Fill → Metrics 
-6.2 Determinism Rules
-• No randomness
-• No async race conditions
-• Fixed latency modeling
-6.3 Matching Engine Guarantees
-Market Orders
-• Walk real order book
-• Slippage emerges naturally
-Limit Orders
-• Fill only when price crosses
-Fees
-• Applied per exchange rules
-7. Strategy Runtime
-7.1 Contract
-on_tick(candles, position) → signal 
-7.2 Constraints
-• Pure function only
-• No I/O
-• No randomness
-Why: Ensures reproducibility and sandbox safety.
-8. Unified Execution Interface
-8.1 Core Idea
-Same function drives both worlds:
-execute(order) 
-8.2 Adapters
-ModeAdapterSimulationMatching EngineLiveExchange API 
-9. Live Trading Engine
-9.1 Isolation
-Runs as a completely separate service.
-9.2 Requirements
-• JWT-authenticated
-• Paid-tier gated
-• Circuit breaker protected
-10. Secure Key Management
-10.1 Design
-• Keys stored in Vault (encrypted)
-• Only decrypted in-memory
-• Never logged
-10.2 Critical Rule
-If a key touches disk or logs, the system is compromised.
-11. Circuit Breakers (Risk System)
-11.1 Triggers
-• Max drawdown exceeded
-• Abnormal execution behavior
-11.2 Action
-• Immediate halt of live trading
-• Session marked circuit_broken
-12. Copy Trading (Simulation Only by Default)
-12.1 Model
-• Leaders emit signals
-• Followers simulate independently
-12.2 Security
-• No strategy code sharing
-• Signals only
-13. Subscription Model
-TierAccessFreeBacktestingTrialSimulation + Live TogglePaidFull system 
-14. Persistence Layer
-14.1 Core Tables
-• users
-• subscriptions
-• simulations
-• trades
-• api_keys
-• market_data
-14.2 Critical Constraint
-trades.is_live MUST ALWAYS BE FILTERED 
-Mixing live and sim = critical failure.
-15. Observability
-15.1 Required
-• Central logging
-• Metrics
-• Alerting
-15.2 Key Metrics
-• Simulation latency
-• Fill accuracy
-• Drawdown rates
-16. Deployment Stack
-LayerToolComputeRailwayDBSupabaseOrchestrationn8nFrontendVercel 
-17. Data Flow Summary
-Backtest
-Historical → Simulation → Results
-Real-Time Simulation
-Live Data → Simulation → Results
-Live Trading
-Live Data → Execution Adapter → Exchange
-18. Final Design Guarantees
-• Deterministic simulations
-• Realistic execution
-• Strict safety boundaries
-• Scalable architecture
-19. What This Enables
-• Safe learning environment
-• Strategy validation before risk
-• Seamless transition to live trading
-20. Build Order (Execution Plan)
-• Supabase schema
-• Telegram bot
-• n8n routing
-• Market ingestor
-• Simulation engine
-• Strategy runtime
-• Live execution engine
-• Dashboard
-End of Specification
-Yeah — that’s fair. The last version was “clean,” but it lost some of the teeth that actually make this system powerful and buildable.
-What I just did:
-• Restored core philosophy + non-negotiables (this is critical for Codex-level correctness)
-• Brought back design intent and reasoning, not just structure
-• Re-emphasized determinism, execution realism, and parity (these were the soul of your system)
-• Reintroduced hard constraints (like is_live separation, key handling rules, etc.)
-• Tightened it into something that still reads clean but actually encodes how to build it right
-It’s now sitting in the canvas as:
-“IFYRT Production Design Spec (Enhanced)”
-What’s still missing (and I can add next if you want):
-Right now this is a high-signal architectural spec, but not yet:
-• Full service-by-service code contracts (endpoints, payloads, exact request/response shapes)
-• Complete database schema (all tables, not just core ones)
-• Exact n8n workflow definitions (node-by-node)
-• Simulation engine internals (loop timing, state machine, worker lifecycle)
-• Live execution adapters (Binance/Bybit specifics, signing, retries)
-• Failure modes + recovery design (this is big for production)
+- Minimal friction UX
+- Integrated authentication
+- Centralized backend consistency
+
+### 3.2 Responsibilities
+- Parse commands
+- Emit structured events
+- Forward to orchestration layer without executing logic
+
+### 3.3 Event Contract
+```ts
+interface IfyrtEvent {
+  event_id: string;
+  event_type: string;
+  timestamp: string;
+  user: {
+    telegram_id: number;
+  };
+  payload: Record<string, any>;
+}
+```
+
+## 4. Event Orchestration Layer (n8n)
+
+### 4.1 Role
+Acts as the central nervous system of the platform.
+- Route events
+- Enforce subscription gates
+- Trigger workers
+- Handle retries and failures
+
+### 4.2 Communication
+Services do not call each other directly; all communication flows through Supabase (state) and n8n (control).
+
+## 5. Market Data Layer
+
+### 5.1 Requirements
+- Real-time ingestion via WebSocket
+- Historical OHLCV storage
+- Order book reconstruction
+
+### 5.2 Storage
+Order book data is stored as JSONB for rapid development, with plans to migrate to a time-series optimized store at scale.
+
+## 6. Simulation Engine
+
+### 6.1 Execution Model
+`Market Data → Strategy → Signal → Matching Engine → Fill → Metrics`
+
+### 6.2 Determinism Rules
+- No randomness
+- No async race conditions
+- Fixed latency modeling
+
+### 6.3 Matching Engine
+- **Market Orders:** Walk the real order book; slippage emerges naturally from depth.
+- **Limit Orders:** Fill only when price crosses.
+- **Fees:** Applied per exchange rules.
+
+## 7. Strategy Runtime
+
+### 7.1 Contract
+`on_tick(candles, position) → signal`
+
+### 7.2 Constraints
+- Pure functions only
+- No I/O or external calls
+- No randomness
+- Ensures reproducibility and sandbox safety.
+
+## 8. Unified Execution Interface
+
+Both simulation and live execution use the same `execute(order)` interface, driven by different adapters:
+- **Simulation Adapter:** Matching Engine
+- **Live Adapter:** Exchange API
+
+## 9. Live Trading Engine
+
+- Runs as a completely isolated service.
+- Requires JWT authentication and a paid-tier subscription.
+- Protected by circuit breakers and risk limits.
+
+## 10. Secure Key Management
+
+- Keys are stored in an encrypted vault.
+- Decryption occurs only in-memory within the execution environment.
+- Keys are never logged or persisted to disk.
+
+## 11. Circuit Breakers
+
+- **Triggers:** Max drawdown exceeded or abnormal execution behavior detected.
+- **Action:** Immediate halt of live trading; session marked as `circuit_broken`.
+
+## 12. Copy Trading
+
+- Leaders emit signals; followers simulate independently.
+- No strategy code is shared; only signals are routed.
+- Default mode is simulation only.
+
+## 13. Subscription Model
+
+| Tier | Access |
+| :--- | :--- |
+| Free | Backtesting only |
+| Trial | Simulation + Live Toggle |
+| Paid | Full system access |
+
+## 14. Persistence Layer
+
+- **Core Tables:** `users`, `subscriptions`, `simulations`, `trades`, `api_keys`, `market_data`.
+- **Constraint:** `trades.is_live` must always be filtered to prevent mixing live and simulated records.
+
+## 15. Observability
+
+- Centralized logging, metrics, and alerting.
+- Key metrics: Simulation latency, fill accuracy, and drawdown rates.
+
+## 16. Deployment Stack
+
+| Layer | Tool |
+| :--- | :--- |
+| Compute | Railway |
+| Database | Supabase |
+| Orchestration | n8n |
+| Frontend | Vercel |
+
+## 17. Build Order
+
+1. Supabase schema
+2. Telegram bot
+3. n8n routing
+4. Market ingestor
+5. Simulation engine
+6. Strategy runtime
+7. Live execution engine
+8. Dashboard
