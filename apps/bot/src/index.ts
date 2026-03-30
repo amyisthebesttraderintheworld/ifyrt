@@ -7,11 +7,13 @@ import {
   logError,
   logInfo,
   optionalEnv,
+  renderLandingPage,
+  renderPrivacyPage,
+  renderTermsPage,
   validationError
 } from "@ifyrt/service-core";
 
 import { dispatchEvent } from "./dispatcher";
-import { renderLandingPage, renderPrivacyPage, renderTermsPage } from "./landing";
 import { parseTelegramCommand } from "./parser";
 import { acknowledgementFor, formatUserError } from "./replies";
 import { deleteTelegramMessage, sendTelegramMessage } from "./telegram";

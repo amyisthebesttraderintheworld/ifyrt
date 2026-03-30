@@ -10,11 +10,12 @@ import {
   logError,
   logInfo,
   optionalEnv,
+  renderLandingPage,
+  renderPrivacyPage,
+  renderTermsPage,
   requestSignatureIsValid,
   validationError
 } from "@ifyrt/service-core";
-
-import { renderLandingPage, renderPrivacyPage, renderTermsPage } from "./landing";
 import { normalizeStripeEvent } from "./stripe";
 import { applyPaymentAction, paymentsPersistenceReady, resolvePaymentContext } from "./supabase";
 
