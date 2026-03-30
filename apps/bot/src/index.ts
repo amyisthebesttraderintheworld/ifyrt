@@ -33,6 +33,7 @@ const ifyrtBotUrl = optionalEnv("IFYRT_BOT_URL") ?? "https://t.me/IFYRTbot";
 const supportEmail = optionalEnv("SUPPORT_EMAIL") ?? "support@ifyrt.app";
 
 async function handleUpdate(updateBody: unknown): Promise<void> {
+  logInfo(serviceName, "Received Telegram update", { body: JSON.stringify(updateBody) });
   const parsedUpdate = telegramUpdateSchema.safeParse(updateBody);
   if (!parsedUpdate.success) {
     throw new Error("Invalid Telegram payload");
@@ -81,7 +82,8 @@ async function handleUpdate(updateBody: unknown): Promise<void> {
     logError(serviceName, "Failed to process Telegram update", {
       chat_id: message.chat.id,
       message_id: message.message_id,
-      error: messageText
+      error: messageText,
+      stack: error instanceof Error ? error.stack : undefined
     });
     await sendTelegramMessage(message.chat.id, formatUserError(messageText)).catch(() => undefined);
   }
