@@ -11,6 +11,7 @@ import {
 } from "@ifyrt/service-core";
 
 import { dispatchEvent } from "./dispatcher";
+import { renderLandingPage, renderPrivacyPage, renderTermsPage } from "./landing";
 import { parseTelegramCommand } from "./parser";
 import { acknowledgementFor, formatUserError } from "./replies";
 import { deleteTelegramMessage, sendTelegramMessage } from "./telegram";
@@ -22,6 +23,9 @@ const port = intEnv("PORT", 3000);
 const telegramWebhookSecret = optionalEnv("TELEGRAM_WEBHOOK_SECRET");
 const n8nWebhookUrl = optionalEnv("N8N_WEBHOOK_URL");
 const internalWebhookSecret = optionalEnv("INTERNAL_WEBHOOK_SECRET");
+const stripePublicPaymentLinkUrl = optionalEnv("STRIPE_PUBLIC_PAYMENT_LINK_URL");
+const ifyrtBotUrl = optionalEnv("IFYRT_BOT_URL") ?? "https://t.me/IFYRTbot";
+const supportEmail = optionalEnv("SUPPORT_EMAIL") ?? "support@ifyrt.app";
 
 async function handleUpdate(updateBody: unknown): Promise<void> {
   const parsedUpdate = telegramUpdateSchema.safeParse(updateBody);
@@ -78,6 +82,32 @@ async function handleUpdate(updateBody: unknown): Promise<void> {
   }
 }
 
+app.get("/", (_req, res) => {
+  res.type("html").send(
+    renderLandingPage({
+      botUrl: ifyrtBotUrl,
+      stripeUrl: stripePublicPaymentLinkUrl,
+      supportEmail
+    })
+  );
+});
+
+app.get("/terms", (_req, res) => {
+  res.type("html").send(
+    renderTermsPage({
+      supportEmail
+    })
+  );
+});
+
+app.get("/privacy", (_req, res) => {
+  res.type("html").send(
+    renderPrivacyPage({
+      supportEmail
+    })
+  );
+});
+
 app.post("/webhooks/telegram", (req, res) => {
   if (telegramWebhookSecret && req.header("x-telegram-bot-api-secret-token") !== telegramWebhookSecret) {
     validationError(res, [{ message: "Invalid Telegram webhook secret" }]);
@@ -97,7 +127,8 @@ app.get("/health/details", (_req, res) => {
       n8n_dispatch_ready: Boolean(n8nWebhookUrl && internalWebhookSecret),
       n8n_webhook_url_configured: Boolean(n8nWebhookUrl),
       internal_webhook_secret_configured: Boolean(internalWebhookSecret),
-      telegram_webhook_secret_configured: Boolean(telegramWebhookSecret)
+      telegram_webhook_secret_configured: Boolean(telegramWebhookSecret),
+      landing_payment_link_ready: Boolean(stripePublicPaymentLinkUrl)
     }
   });
 });
