@@ -20,6 +20,8 @@ const serviceName = "ifyrt-bot";
 const app = createServiceApp(serviceName);
 const port = intEnv("PORT", 3000);
 const telegramWebhookSecret = optionalEnv("TELEGRAM_WEBHOOK_SECRET");
+const n8nWebhookUrl = optionalEnv("N8N_WEBHOOK_URL");
+const internalWebhookSecret = optionalEnv("INTERNAL_WEBHOOK_SECRET");
 
 async function handleUpdate(updateBody: unknown): Promise<void> {
   const parsedUpdate = telegramUpdateSchema.safeParse(updateBody);
@@ -86,6 +88,23 @@ app.post("/webhooks/telegram", (req, res) => {
   void handleUpdate(req.body);
 });
 
+app.get("/health/details", (_req, res) => {
+  res.json({
+    service: serviceName,
+    status: n8nWebhookUrl && internalWebhookSecret ? "ok" : "degraded",
+    timestamp: new Date().toISOString(),
+    details: {
+      n8n_dispatch_ready: Boolean(n8nWebhookUrl && internalWebhookSecret),
+      n8n_webhook_url_configured: Boolean(n8nWebhookUrl),
+      internal_webhook_secret_configured: Boolean(internalWebhookSecret),
+      telegram_webhook_secret_configured: Boolean(telegramWebhookSecret)
+    }
+  });
+});
+
 app.listen(port, () => {
-  logInfo(serviceName, "Service listening", { port });
+  logInfo(serviceName, "Service listening", {
+    port,
+    n8n_dispatch_ready: Boolean(n8nWebhookUrl && internalWebhookSecret)
+  });
 });

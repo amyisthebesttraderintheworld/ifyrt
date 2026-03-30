@@ -1,10 +1,26 @@
 import { ifyrtEventSchema, type IfyrtEvent } from "@ifyrt/contracts";
-import { createHmacSignature, logInfo, requireEnv } from "@ifyrt/service-core";
+import { createHmacSignature, logInfo, optionalEnv } from "@ifyrt/service-core";
 
-const webhookUrl = requireEnv("N8N_WEBHOOK_URL");
-const internalWebhookSecret = requireEnv("INTERNAL_WEBHOOK_SECRET");
+function dispatchConfig() {
+  const webhookUrl = optionalEnv("N8N_WEBHOOK_URL");
+  const internalWebhookSecret = optionalEnv("INTERNAL_WEBHOOK_SECRET");
+
+  if (!webhookUrl) {
+    throw new Error("Missing required environment variable: N8N_WEBHOOK_URL");
+  }
+
+  if (!internalWebhookSecret) {
+    throw new Error("Missing required environment variable: INTERNAL_WEBHOOK_SECRET");
+  }
+
+  return {
+    webhookUrl,
+    internalWebhookSecret
+  };
+}
 
 export async function dispatchEvent(event: IfyrtEvent): Promise<void> {
+  const { webhookUrl, internalWebhookSecret } = dispatchConfig();
   const payload = ifyrtEventSchema.parse(event);
   const response = await fetch(webhookUrl, {
     method: "POST",
