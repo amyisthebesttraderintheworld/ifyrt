@@ -28,22 +28,22 @@ function layout(title: string, description: string, body: string): string {
     <style>
       :root {
         color-scheme: dark;
-        --bg: #050908;
-        --bg-deep: #020504;
-        --panel: rgba(9, 15, 13, 0.84);
-        --panel-strong: rgba(7, 11, 10, 0.94);
-        --panel-soft: rgba(10, 18, 15, 0.74);
-        --line: rgba(137, 171, 156, 0.14);
-        --line-strong: rgba(72, 240, 139, 0.22);
-        --text: #eef5f0;
-        --text-soft: #9cab9f;
-        --text-faint: #6f8077;
-        --accent: #43ea87;
-        --accent-deep: #21b760;
-        --accent-glow: rgba(67, 234, 135, 0.24);
-        --warm: #ff8f6e;
-        --gold: #d4d58a;
-        --shadow: 0 28px 80px rgba(0, 0, 0, 0.38);
+        --bg: #050706;
+        --bg-deep: #010201;
+        --panel: rgba(10, 14, 12, 0.88);
+        --panel-strong: rgba(8, 12, 10, 0.96);
+        --panel-soft: rgba(12, 18, 16, 0.78);
+        --line: rgba(140, 180, 160, 0.1);
+        --line-strong: rgba(80, 250, 150, 0.16);
+        --text: #f0f7f4;
+        --text-soft: #a8b8ae;
+        --text-faint: #788880;
+        --accent: #50fa96;
+        --accent-deep: #22c36a;
+        --accent-glow: rgba(80, 250, 150, 0.15);
+        --warm: #ffb499;
+        --gold: #e8e99a;
+        --shadow: 0 40px 100px rgba(0, 0, 0, 0.6);
       }
 
       * {
@@ -60,9 +60,25 @@ function layout(title: string, description: string, body: string): string {
         font-family: "Manrope", "Segoe UI", sans-serif;
         color: var(--text);
         background:
-          radial-gradient(circle at 18% 0%, rgba(20, 83, 51, 0.24), transparent 28%),
-          radial-gradient(circle at 82% 14%, rgba(255, 143, 110, 0.1), transparent 24%),
-          linear-gradient(180deg, #070b0a 0%, var(--bg) 42%, var(--bg-deep) 100%);
+          radial-gradient(circle at 10% 0%, rgba(30, 100, 70, 0.18), transparent 35%),
+          radial-gradient(circle at 90% 15%, rgba(255, 180, 153, 0.06), transparent 30%),
+          linear-gradient(180deg, #060908 0%, var(--bg) 40%, var(--bg-deep) 100%);
+      }
+
+      .animate-on-scroll {
+        opacity: 0;
+        transform: translateY(32px) scale(0.985);
+        transition: 
+          opacity 1.2s cubic-bezier(0.16, 1, 0.3, 1), 
+          transform 1.2s cubic-bezier(0.16, 1, 0.3, 1),
+          filter 1.2s cubic-bezier(0.16, 1, 0.3, 1);
+        filter: blur(4px);
+      }
+
+      .animate-on-scroll.visible {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+        filter: blur(0);
       }
 
       body::before,
@@ -78,7 +94,7 @@ function layout(title: string, description: string, body: string): string {
         width: 54vw;
         height: 54vw;
         border-radius: 50%;
-        background: radial-gradient(circle, rgba(67, 234, 135, 0.14), transparent 68%);
+        background: radial-gradient(circle, rgba(67, 234, 135, 0.12), transparent 68%);
         filter: blur(60px);
         animation: drift 14s ease-in-out infinite;
       }
@@ -89,7 +105,7 @@ function layout(title: string, description: string, body: string): string {
         width: 32vw;
         height: 32vw;
         border-radius: 50%;
-        background: radial-gradient(circle, rgba(255, 143, 110, 0.08), transparent 70%);
+        background: radial-gradient(circle, rgba(255, 143, 110, 0.06), transparent 70%);
         filter: blur(72px);
       }
 
@@ -142,14 +158,14 @@ function layout(title: string, description: string, body: string): string {
 
       .panel {
         border: 1px solid var(--line);
-        background: linear-gradient(180deg, rgba(10, 16, 14, 0.94) 0%, rgba(6, 10, 9, 0.9) 100%);
+        background: linear-gradient(180deg, rgba(8, 12, 10, 0.96) 0%, rgba(4, 8, 7, 0.92) 100%);
         border-radius: 32px;
         box-shadow: var(--shadow);
         backdrop-filter: blur(18px);
       }
 
       .panel-strong {
-        background: linear-gradient(180deg, rgba(8, 12, 11, 0.98) 0%, rgba(4, 8, 7, 0.98) 100%);
+        background: linear-gradient(180deg, rgba(6, 10, 8, 0.98) 0%, rgba(2, 6, 4, 0.98) 100%);
       }
 
       .site-header {
@@ -157,12 +173,12 @@ function layout(title: string, description: string, body: string): string {
         grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
         align-items: center;
         gap: 20px;
-        padding: 14px 18px;
+        padding: 10px 18px;
         margin-bottom: 20px;
-        border: 1px solid rgba(137, 171, 156, 0.1);
+        border: 1px solid rgba(137, 171, 156, 0.08);
         border-radius: 999px;
-        background: rgba(5, 8, 7, 0.72);
-        backdrop-filter: blur(18px);
+        background: rgba(4, 8, 7, 0.72);
+        backdrop-filter: blur(20px);
         position: sticky;
         top: 18px;
         z-index: 20;
@@ -186,13 +202,9 @@ function layout(title: string, description: string, body: string): string {
         text-transform: uppercase;
       }
 
-      .brand-mark::before {
-        content: "";
-        width: 14px;
-        height: 14px;
-        border-radius: 4px;
-        background: linear-gradient(135deg, var(--warm) 0%, var(--accent) 100%);
-        box-shadow: 0 0 0 4px rgba(67, 234, 135, 0.08), 0 0 22px rgba(67, 234, 135, 0.22);
+      .brand-logo {
+        height: 28px;
+        width: auto;
       }
 
       .brand-note {
@@ -237,7 +249,7 @@ function layout(title: string, description: string, body: string): string {
       .nav-link:hover,
       .nav-link:focus-visible {
         color: var(--text);
-        background: rgba(255, 255, 255, 0.04);
+        background: rgba(255, 255, 255, 0.03);
       }
 
       .button {
@@ -261,14 +273,14 @@ function layout(title: string, description: string, body: string): string {
       }
 
       .button-primary {
-        color: #071109;
+        color: #040806;
         background: linear-gradient(135deg, #4ef191 0%, var(--accent) 100%);
-        box-shadow: 0 0 0 1px rgba(72, 240, 139, 0.28) inset, 0 18px 38px rgba(25, 177, 92, 0.26);
+        box-shadow: 0 0 0 1px rgba(72, 240, 139, 0.22) inset, 0 18px 42px rgba(25, 177, 92, 0.22);
       }
 
       .button-secondary {
         border-color: var(--line);
-        background: rgba(255, 255, 255, 0.02);
+        background: rgba(255, 255, 255, 0.01);
         color: var(--text);
       }
 
@@ -297,8 +309,8 @@ function layout(title: string, description: string, body: string): string {
         position: absolute;
         inset: 0;
         background:
-          radial-gradient(circle at 50% 0%, rgba(67, 234, 135, 0.12), transparent 42%),
-          radial-gradient(circle at 50% 100%, rgba(255, 143, 110, 0.06), transparent 36%);
+          radial-gradient(circle at 50% 0%, rgba(67, 234, 135, 0.1), transparent 42%),
+          radial-gradient(circle at 50% 100%, rgba(255, 143, 110, 0.04), transparent 36%);
         pointer-events: none;
       }
 
@@ -307,8 +319,8 @@ function layout(title: string, description: string, body: string): string {
         position: absolute;
         inset: 11% 23%;
         border-radius: 42px;
-        border: 1px solid rgba(72, 240, 139, 0.08);
-        background: linear-gradient(180deg, rgba(10, 18, 15, 0.26), rgba(10, 18, 15, 0));
+        border: 1px solid rgba(72, 240, 139, 0.06);
+        background: linear-gradient(180deg, rgba(10, 18, 15, 0.2), rgba(10, 18, 15, 0));
         pointer-events: none;
       }
 
@@ -326,8 +338,8 @@ function layout(title: string, description: string, body: string): string {
         width: fit-content;
         padding: 10px 16px;
         border-radius: 999px;
-        border: 1px solid rgba(72, 240, 139, 0.16);
-        background: rgba(10, 22, 15, 0.66);
+        border: 1px solid rgba(72, 240, 139, 0.12);
+        background: rgba(8, 16, 12, 0.66);
         color: #8ddfb1;
         font-size: 0.84rem;
         font-weight: 700;
@@ -412,7 +424,7 @@ function layout(title: string, description: string, body: string): string {
       .proof-card {
         border-radius: 24px;
         border: 1px solid var(--line);
-        background: rgba(10, 16, 14, 0.7);
+        background: rgba(8, 12, 10, 0.7);
         text-align: left;
       }
 
@@ -465,7 +477,7 @@ function layout(title: string, description: string, body: string): string {
         padding: 0 12px;
         border-radius: 999px;
         border: 1px solid var(--line-strong);
-        background: rgba(11, 28, 18, 0.8);
+        background: rgba(8, 20, 14, 0.8);
         color: #8ddfb1;
         font-size: 0.8rem;
         font-weight: 800;
@@ -595,7 +607,7 @@ function layout(title: string, description: string, body: string): string {
         padding: 18px;
         border-radius: 22px;
         border: 1px solid rgba(72, 240, 139, 0.12);
-        background: rgba(13, 26, 19, 0.72);
+        background: rgba(8, 20, 14, 0.72);
       }
 
       .support-panel strong {
@@ -731,9 +743,29 @@ function layout(title: string, description: string, body: string): string {
         }
       }
     </style>
+    <script async src="https://js.stripe.com/v3/buy-button.js"></script>
   </head>
   <body>
     ${body}
+    <script>
+      const observerOptions = {
+        root: null,
+        rootMargin: '0px',
+        threshold: 0.1
+      };
+
+      const observer = new IntersectionObserver((entries, observer) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('visible');
+          }
+        });
+      }, observerOptions);
+
+      document.querySelectorAll('.animate-on-scroll').forEach(el => {
+        observer.observe(el);
+      });
+    </script>
   </body>
 </html>`;
 }
@@ -758,8 +790,9 @@ function renderSiteHeader(variant: "home" | "legal" = "home", actionHref?: strin
 
   return `<header class="site-header">
     <div class="brand-lockup">
+      <img src="/assets/brand/ifyrt-logo-primary.png" alt="Ifyrt logo" class="brand-logo" />
       <span class="brand-mark">Ifyrt</span>
-      <span class="brand-note">Telegram-native strategy simulation and paper execution</span>
+      <span class="brand-note">Telegram-native strategy simulation</span>
     </div>
     <nav class="site-nav" aria-label="Primary">
       ${links.map((link) => `<a class="nav-link" href="${link.href}">${link.label}</a>`).join("")}
@@ -799,28 +832,32 @@ export function renderLandingPage(options: LandingOptions): string {
     "Ifyrt",
     "Telegram-native trading simulation with deterministic backtests, paper execution, and professional-grade strategy validation.",
     `<main class="page-shell">
-      ${renderSiteHeader("home", ctaHref)}
+      ${renderSiteHeader("home", "#pricing")}
 
       <section class="hero">
-        <div class="panel panel-strong hero-shell">
+        <div class="panel panel-strong hero-shell animate-on-scroll">
           <span class="hero-badge">7-Day Free Trial Available</span>
           <h1 class="hero-title">Algorithmic trading, <span>orchestrated from Telegram</span></h1>
           <p class="hero-lead">High-fidelity backtesting and real-time paper trading for serious strategy development. Start with a <strong>7-day free trial</strong> and validate your ideas before transitioning to live execution.</p>
           <div class="cta-group">
-            <a class="button button-primary" href="${escapeHtml(heroPrimaryHref)}">${escapeHtml(heroPrimaryLabel)}</a>
+            <stripe-buy-button
+              buy-button-id="buy_btn_1TGkOd8xqBofAeppPtBiwcVh"
+              publishable-key="pk_live_51TGiY98xqBofAeppqQCoN7ryX23nOjwx5Q0SccQ8ppQleLz2qFASDfp0t2kHegluOnbp63mv079Xo1dCz0ssAA8e00pVGiQE7s"
+            ></stripe-buy-button>
+            <a class="button button-secondary" href="${escapeHtml(options.botUrl)}">Open in Telegram</a>
             <a class="button button-secondary" href="#how-it-works">How It Works</a>
           </div>
           <p class="mini-note">Full access to simulation and backtesting during your trial. Live trading is isolated behind secure risk controls.</p>
           <div class="proof-strip" aria-label="Highlights">
-            <article class="proof-card">
+            <article class="proof-card animate-on-scroll">
               <strong>Deterministic backtests</strong>
               <span>Verify strategy performance with repeatable historical replays and precise fill modeling.</span>
             </article>
-            <article class="proof-card">
+            <article class="proof-card animate-on-scroll">
               <strong>Live paper sessions</strong>
               <span>Bridge the gap between research and reality with real-time simulation using live market data.</span>
             </article>
-            <article class="proof-card">
+            <article class="proof-card animate-on-scroll">
               <strong>Secure live execution</strong>
               <span>Deploy to live markets with isolated key management and automated risk safeguards.</span>
             </article>
@@ -829,23 +866,23 @@ export function renderLandingPage(options: LandingOptions): string {
       </section>
 
       <section class="section" id="how-it-works">
-        <div class="section-intro">
+        <div class="section-intro animate-on-scroll">
           <span class="kicker">How It Works</span>
           <h2>A powerful trading engine behind a simple interface.</h2>
           <p>Ifyrt provides the tools you need to research, test, and execute algorithmic strategies without the overhead of traditional trading platforms.</p>
         </div>
         <div class="step-grid">
-          <article class="panel step-card">
+          <article class="panel step-card animate-on-scroll">
             <span class="number-pill">01</span>
             <h3>Connect in Telegram</h3>
             <p>Launch your first simulation in seconds. Telegram serves as your unified command center for deployment and monitoring.</p>
           </article>
-          <article class="panel step-card">
+          <article class="panel step-card animate-on-scroll">
             <span class="number-pill">02</span>
             <h3>Backtest & Validate</h3>
             <p>Verify your edge with high-fidelity historical data and order-book-aware simulation before committing capital.</p>
           </article>
-          <article class="panel step-card">
+          <article class="panel step-card animate-on-scroll">
             <span class="number-pill">03</span>
             <h3>Execute with Confidence</h3>
             <p>Transition to paper trading or live execution using identical logic, protected by server-side risk controls.</p>
@@ -855,7 +892,7 @@ export function renderLandingPage(options: LandingOptions): string {
 
       <section class="section" aria-label="Product overview">
         <div class="showcase-grid">
-          <article class="panel feature-card">
+          <article class="panel feature-card animate-on-scroll">
             <span class="kicker">Integrated Workflow</span>
             <h3>Command-driven precision for every stage of your strategy.</h3>
             <div class="signal-cluster">
@@ -873,7 +910,7 @@ export function renderLandingPage(options: LandingOptions): string {
               </div>
             </div>
           </article>
-          <article class="panel feature-card">
+          <article class="panel feature-card animate-on-scroll">
             <span class="kicker">Architecture</span>
             <h3>Designed for reliability and performance.</h3>
             <p>Ifyrt is built with a clear separation between research and execution, ensuring your live funds are always protected by robust safeguards.</p>
@@ -889,7 +926,7 @@ export function renderLandingPage(options: LandingOptions): string {
 
       <section class="section" id="pricing">
         <div class="pricing-shell">
-          <article class="panel pricing-card">
+          <article class="panel pricing-card animate-on-scroll">
             <span class="kicker">Pricing</span>
             <h2>Simple, transparent pricing for serious traders.</h2>
             <p>Start with a 7-day free trial of all simulation features. Upgrade to Pro for live execution and full platform capabilities.</p>
@@ -914,12 +951,16 @@ export function renderLandingPage(options: LandingOptions): string {
               </div>
             </div>
           </article>
-          <aside class="panel panel-strong pricing-card">
+          <aside class="panel panel-strong pricing-card animate-on-scroll">
             <span class="price-callout">Ready to begin?</span>
             <h3>Join the future of algorithmic strategy development.</h3>
             <p>${hasStripe ? "Upgrade to Pro for $6.99/month to gain full access to live execution and professional risk controls." : "Open the bot and start your 7-day trial immediately with full access to simulation features."}</p>
             <div class="cta-group">
-              <a class="button button-primary" href="${escapeHtml(pricingPrimaryHref)}">${escapeHtml(pricingPrimaryLabel)}</a>
+              <stripe-buy-button
+                buy-button-id="buy_btn_1TGkOd8xqBofAeppPtBiwcVh"
+                publishable-key="pk_live_51TGiY98xqBofAeppqQCoN7ryX23nOjwx5Q0SccQ8ppQleLz2qFASDfp0t2kHegluOnbp63mv079Xo1dCz0ssAA8e00pVGiQE7s"
+              ></stripe-buy-button>
+              <a class="button button-primary" href="${escapeHtml(options.botUrl)}">Open in Telegram</a>
               <a class="button button-secondary" href="${escapeHtml(pricingSecondaryHref)}">${escapeHtml(pricingSecondaryLabel)}</a>
             </div>
             <p class="mini-note">Have questions? Contact our team at <a href="mailto:${escapeHtml(options.supportEmail)}">${escapeHtml(options.supportEmail)}</a>.</p>

@@ -4,14 +4,19 @@ export const helpText = `/start
 /help
 /backtest <strategy> <symbol> <from> <to> [exchange]
 /simulate <strategy> <symbol> [exchange]
-/sim_stop
-/status
-/live_on
+/stop (or /sim_stop)
+/status (or /account, /pnl, /positions, /history, /trades)
+/live (or /live_on)
 /live_off
 /copy <leader> [sim|live]
 /copy follow <leader> [sim|live]
+/copy stop [leader] (or /copy unfollow)
+/copy list
+/copy mystats
+/copy share
+/copy hide
 /copy_stop [leader]
-/subscribe
+/subscribe (or /billing, /cancel)
 /dashboard
 /strategies
 /setkey <exchange> <api_key> <api_secret> [label]`;
@@ -38,6 +43,14 @@ export function acknowledgementFor(eventType: EventType): string {
       return "Copy-trading request received.";
     case "copy.stop":
       return "Copy-trading stop request received.";
+    case "copy.list":
+      return "Fetching top copyable traders.";
+    case "copy.stats":
+      return "Fetching your copy-trading performance.";
+    case "copy.share":
+      return "Registering your profile as a copyable leader.";
+    case "copy.hide":
+      return "Hiding your profile from the public copy list.";
     case "subscription.view":
       return "Subscription details are being prepared, including checkout or billing options if available.";
     case "dashboard.request":

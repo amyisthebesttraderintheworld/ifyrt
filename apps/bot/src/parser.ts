@@ -109,14 +109,39 @@ export function parseTelegramCommand(text: string, chat: TelegramChat): ParsedCo
       return { eventType: "simulation.start", payload: parsed, deleteMessage: false };
     }
     case "/sim_stop":
+    case "/stop":
       return { eventType: "simulation.stop", payload: {}, deleteMessage: false };
     case "/status":
+    case "/account":
+    case "/pnl":
+    case "/positions":
+    case "/history":
+    case "/trades":
       return { eventType: "user.status", payload: {}, deleteMessage: false };
     case "/live_on":
+    case "/live":
       return { eventType: "live.enable", payload: {}, deleteMessage: false };
     case "/live_off":
       return { eventType: "live.disable", payload: {}, deleteMessage: false };
     case "/copy": {
+      const subcommand = args[0]?.toLowerCase();
+      if (subcommand === "list") {
+        return { eventType: "copy.list", payload: {}, deleteMessage: false };
+      }
+      if (subcommand === "mystats" || subcommand === "stats") {
+        return { eventType: "copy.stats", payload: {}, deleteMessage: false };
+      }
+      if (subcommand === "share") {
+        return { eventType: "copy.share", payload: {}, deleteMessage: false };
+      }
+      if (subcommand === "hide") {
+        return { eventType: "copy.hide", payload: {}, deleteMessage: false };
+      }
+      if (subcommand === "unfollow" || subcommand === "stop" || subcommand === "off") {
+        const leader = args[1] ? normalizeHandle(args[1]) : undefined;
+        return { eventType: "copy.stop", payload: { leader }, deleteMessage: false };
+      }
+
       const parsed = parseCopyStartArgs(args);
       return { eventType: "copy.start", payload: parsed, deleteMessage: false };
     }
@@ -128,6 +153,8 @@ export function parseTelegramCommand(text: string, chat: TelegramChat): ParsedCo
       return { eventType: "copy.stop", payload: parsed, deleteMessage: false };
     }
     case "/subscribe":
+    case "/billing":
+    case "/cancel":
       return { eventType: "subscription.view", payload: {}, deleteMessage: false };
     case "/dashboard":
       return { eventType: "dashboard.request", payload: {}, deleteMessage: false };

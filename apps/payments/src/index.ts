@@ -33,6 +33,7 @@ const internalWebhookSecret = optionalEnv("INTERNAL_WEBHOOK_SECRET");
 const telegramBotToken = optionalEnv("TELEGRAM_BOT_TOKEN");
 const port = intEnv("PORT", 3005);
 const app = express();
+app.use("/assets", express.static("../../assets"));
 const stripe = stripeSecretKey ? new Stripe(stripeSecretKey) : undefined;
 
 async function sendTelegramNotification(chatId: number, text: string): Promise<void> {

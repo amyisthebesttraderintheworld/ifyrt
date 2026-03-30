@@ -21,6 +21,7 @@ import { telegramUpdateSchema } from "./types";
 
 const serviceName = "ifyrt-bot";
 const app = createServiceApp(serviceName);
+app.use("/assets", express.static("../../assets"));
 const port = intEnv("PORT", 3000);
 const telegramWebhookSecret = optionalEnv("TELEGRAM_WEBHOOK_SECRET");
 const n8nWebhookUrl = optionalEnv("N8N_WEBHOOK_URL");

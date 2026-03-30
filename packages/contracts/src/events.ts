@@ -17,6 +17,10 @@ export const eventTypeSchema = z.enum([
   "live.disable",
   "copy.start",
   "copy.stop",
+  "copy.list",
+  "copy.stats",
+  "copy.share",
+  "copy.hide",
   "subscription.view",
   "dashboard.request",
   "strategy.list",
@@ -86,6 +90,10 @@ export type EventPayloadMap = {
   "live.disable": Record<string, never>;
   "copy.start": z.infer<typeof copyStartPayloadSchema>;
   "copy.stop": z.infer<typeof copyStopPayloadSchema>;
+  "copy.list": Record<string, never>;
+  "copy.stats": Record<string, never>;
+  "copy.share": Record<string, never>;
+  "copy.hide": Record<string, never>;
   "subscription.view": Record<string, never>;
   "dashboard.request": Record<string, never>;
   "strategy.list": Record<string, never>;
