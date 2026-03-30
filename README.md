@@ -74,4 +74,4 @@ npm run dev:bot
 
 ---
 
-<kbd><img src="../ifyrt_full_architecture.svg" width="640" alt="Ifyrt architecture diagram (local file)" /></kbd>
+<kbd><img src="ifyrt_full_architecture.svg" width="640" alt="Ifyrt architecture diagram (local file)" /></kbd>
