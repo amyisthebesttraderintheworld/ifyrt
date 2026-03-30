@@ -1,0 +1,30 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "CommonJS",
+    "moduleResolution": "Node",
+    "lib": [
+      "ES2022"
+    ],
+    "baseUrl": ".",
+    "paths": {
+      "@ifyrt/contracts": [
+        "packages/contracts/src"
+      ],
+      "@ifyrt/service-core": [
+        "packages/service-core/src"
+      ],
+      "@ifyrt/simulation-core": [
+        "packages/simulation-core/src"
+      ]
+    },
+    "strict": true,
+    "esModuleInterop": true,
+    "forceConsistentCasingInFileNames": true,
+    "skipLibCheck": true,
+    "declaration": true,
+    "rootDir": "src",
+    "outDir": "dist",
+    "resolveJsonModule": true
+  }
+}

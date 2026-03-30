@@ -1,0 +1,4530 @@
+Design a production-grade, multi-tenant system architecture for TriFi / Ifyrt, a Telegram-native automated trading simulation platform with strict separation between simulation and live execution layers, emphasizing deterministic, high-fidelity backtesting as the core product. The platform operates on a subscription model with a 7-day free trial, followed by a $6.99/month paid tier, and includes an optional, subscription-gated dashboard that complements (but does not replace) full Telegram control. The platform also supports a simulation-based copy-trading system, enabling users to risk-free simulate the strategies of consenting peers.
+
+Why TriFi / Ifyrt: The name is psychologically resonant (rhymes with Binance), easy to recall, and implies experimentation and trial (“Try”) with trading, reinforcing the platform’s educational focus.
+
+---
+
+1. System Overview
+Architect as a distributed, event-driven system composed of independently scalable services.
+Why: Event-driven architecture enables real-time responsiveness, concurrency, and isolation of tenants, essential for accurate simulation and live parity.
+
+Ingress Layer (Telegram Interface)
+API Gateway + Auth Layer
+Simulation Engine (Core)
+Live Trading Execution Engine (Isolated)
+Strategy Runtime Layer
+Market Data Layer
+User & Subscription Management
+Secure Key Management Service
+Persistence Layer
+Orchestration + Queueing System
+Optional Dashboard Layer (Independent UI)
+Copy-Trading Simulation Layer
+
+---
+
+2. Telegram Control Plane (Primary Interface)
+Telegram is the authoritative control surface.
+
+Command parsing (/start, /backtest, /simulate, /live_on, /live_off, /copy)
+
+Inline keyboards for flows
+
+Webhook-based ingestion
+
+Bot Gateway Service:
+
+Stateless
+
+Converts user input → structured events
+
+Publishes to internal message bus
+
+No embedded business logic
+
+Why: Centralizing control in Telegram reduces user friction, ensures platform logic consistency, and aligns with the educational, low-risk philosophy.
+
+---
+
+3. API Gateway & Authentication
+
+Stateless JWT authentication
+
+Telegram user ID mapped to internal identity
+
+Rate limiting and validation
+
+Subscription + trial enforcement middleware
+
+Why: Stateless centralized auth allows horizontal scaling, consistent access control, and ensures correct subscription enforcement across all features.
+
+---
+
+4. Multi-Tenant Simulation Engine (CORE FOCUS)
+
+Deterministic backtesting + real-time simulation
+
+Order book–level execution modeling
+
+Latency, slippage, spread, and fee realism
+
+Identical execution pathways shared with live trading
+
+Why: Fidelity ensures educational value and prevents misleading results; tenants remain isolated while supporting realistic, reproducible scenarios.
+
+Architecture:
+
+Event-driven (order book delta / trade tick)
+
+Isolated workers per simulation
+
+State machine: INIT → RUNNING → COMPLETED → STORED
+Why: Worker isolation guarantees determinism and safe concurrent execution.
+
+---
+
+5. Simulation Execution Model (Real Market Data Driven)
+Powered entirely by public exchange market data.
+
+Why: Eliminates private keys, provides accurate market conditions, and maintains risk-free learning.
+
+Data Sources: WebSocket streams, REST fallback
+
+Execution Flow: ingest snapshots → strategy signal → simulated matching engine
+
+Execution Mechanics: market orders traverse real depth, limit orders fill only on actual price interaction, slippage emerges naturally, exchange fees applied, artificial latency configurable
+
+Why: Mimics live execution to teach accurate risk and trade dynamics.
+
+---
+
+6. Strategy Runtime Layer
+
+Sandboxed (WASM/container)
+
+Deterministic behavior enforced
+
+Interface: on_tick(data) -> orders
+
+Why: Protects system integrity while ensuring reproducible strategy results.
+
+---
+
+7. Market Data Layer
+
+Real-time ingestion, historical storage, order book reconstruction, exchange normalization
+
+Why: Standardizes multiple exchanges for multi-asset simulations and enables consistent results across tenants.
+
+---
+
+8. Unified Execution Interface (Simulation = Live Parity)
+
+Single interface: execute(order)
+
+Simulation → simulated engine, Live → exchange adapter
+
+Identical logic in both modes
+
+Why: Ensures learning in simulation translates directly to live conditions; avoids behavioral divergence.
+
+---
+
+9. Live Trading Execution Engine (Isolated)
+
+Separate from simulation
+
+Uses secure API keys
+
+Returns real fills only
+
+Live switch controlled by user
+
+Circuit breakers and risk limits
+
+Why: Protects real funds while maintaining identical execution pathways for strategy parity.
+
+---
+
+10. Secure API Key Management
+
+KMS-backed envelope encryption
+
+Decryption only in execution environment
+
+Strict auditing
+
+Why: Ensures privacy, compliance, and security of sensitive credentials.
+
+---
+
+11. Subscription, Trial & Access Control
+
+Free Tier: backtesting only
+
+7-Day Trial: full simulation & live toggle
+
+Paid Tier ($6.99/month): full system + dashboard
+
+Why: Balances revenue protection with low-barrier educational access.
+
+---
+
+12. Persistence Layer
+
+PostgreSQL: users, subscriptions, configs
+
+Time-series DB: market & simulation data
+
+Object storage: logs, trade history
+
+Why: Specialized storage ensures performance, scalability, and reproducibility of simulations.
+
+---
+
+13. Event Bus / Queueing
+
+Kafka / NATS / Redis Streams for jobs, data, and signals
+
+Why: Decouples components, allows scalable concurrent processing, and ensures fault tolerance.
+
+---
+
+14. Orchestration & Compute
+
+Kubernetes, isolated containers, autoscaling
+
+Why: Guarantees high availability and elastic scaling under variable simulation and live loads.
+
+---
+
+15. Observability & Safety
+
+Centralized logging, metrics, alerts, drawdown-triggered shutdown, anomaly detection
+
+Why: Provides operational insight, risk mitigation, and automated system safety.
+
+---
+
+16. Data Flow Summary
+
+Backtest: Historical data → simulation → results
+
+Real-Time Simulation: Live public data → simulated execution → results
+
+Live Trading: Same flow → real execution adapter replaces simulated engine
+
+Why: Separation ensures no accidental cross-contamination between live and simulated trades.
+
+---
+
+17. Exchange Abstraction Layer
+Unified schema: { "symbol": "BTC/USDT", "bid": ..., "ask": ..., "orderbook": ... }
+
+Why: Standardization enables consistent handling of multiple exchanges and multi-asset simulations.
+
+---
+
+18. Independent Dashboard Layer (Subscription-Gated Addition)
+
+Mirrors activity without replacing Telegram
+
+WebSocket/event-stream for real-time updates
+
+Stateless UI, zero new logic paths
+
+Why: Provides enhanced visualization and monitoring while keeping Telegram as the authoritative interface, maintaining risk-free educational integrity.
+
+---
+
+19. Copy-Trading Simulation Layer
+
+Users opt-in to share strategy signals
+
+Followers simulate trades in real-time risk-free
+
+Multi-exchange simulation supported
+
+Metrics: simulated PnL, execution efficiency, slippage, fees
+
+Execution Flow:
+
+1. Copyable user shares strategy signals
+
+2. Follower chooses strategies to simulate
+
+3. Signals routed to isolated simulation workers
+
+4. Results tracked without live execution unless follower enables live mode
+
+Security: Strategy owners control copy permissions; followers see only signals
+
+Why: Enables collaborative learning, strategy validation, and risk-free experimentation while preventing exposure of sensitive data or real funds.
+
+---
+
+20. Core Design Principles
+
+Simulation uses real market data
+
+Slippage, fees, latency emerge from real liquidity
+
+Simulation and live execution share identical interfaces
+
+Telegram is primary control surface
+
+Dashboard and copy-trading layers optional, isolated, subscription-gated
+
+Education, experimentation, and risk-free learning remain the primary value
+
+Why: Preserves trust, safety, and educational integrity while providing actionable insight across multiple exchanges.
+
+Got it. One section per turn, fully designed, free-to-launch stack: **Railway + Supabase + n8n-style event wiring**. Everything connects like a brain — no orphaned services.
+
+Let's begin.
+
+---
+
+# 🧠 IFYRT — Turn 1 of ~20
+## Section 1: System Overview & The Brain Map
+
+---
+
+## What This Turn Covers
+The **master wiring diagram** — every service, how they connect, and the free-tier infrastructure each one lives on. This is the blueprint all other turns will build into.
+
+---
+
+## Free-Tier Infrastructure Stack
+
+| Layer | Tool | Why Free/Cheap |
+|---|---|---|
+| Backend Services | **Railway** | Free hobby tier, deploy from GitHub, env vars, custom domains |
+| Persistence | **Supabase** | Free tier: PostgreSQL + Realtime + Auth + Storage |
+| Automation / Wiring | **n8n (self-hosted on Railway)** | Free self-hosted, visual workflow engine |
+| Market Data | **Binance/Bybit public WS** | Free public WebSocket streams |
+| Bot Hosting | **Railway** | Webhook-based Telegram bot, always-on |
+| Queue / Pub-Sub | **Supabase Realtime** + **Redis on Railway** | Supabase free tier handles most; Redis for hot queues |
+| Dashboard UI | **Vercel** (free tier) | Static/SSR frontend, free hobby |
+| Secrets | **Railway env vars** + **Supabase Vault** | Both free |
+
+---
+
+## The 12 Services (The Brain)
+
+```
+┌─────────────────────────────────────────────────────────┐
+│                        IFYRT BRAIN                      │
+│                                                         │
+│  [1] Telegram Bot Gateway  ──────────────────────────┐  │
+│         (Railway)                                    │  │
+│              │ publishes events                      │  │
+│              ▼                                       │  │
+│  [2] n8n Automation Hub  ◄───────────────────────────┘  │
+│         (Railway)          routes all inter-service     │
+│         │    │    │        events like a brain stem      │
+│         │    │    │                                      │
+│    ┌────┘  ┌─┘  ┌─┴────────────────────┐               │
+│    ▼       ▼    ▼                       ▼               │
+│  [3]     [4]  [5]                     [6]               │
+│  Auth   Subs  Simulation Engine      Market Data        │
+│  Layer  Mgmt  (Railway workers)      Ingestor           │
+│    │       │        │                    │              │
+│    └───────┴────────┴────────────────────┘              │
+│                      │                                  │
+│              [Supabase Core]                            │
+│         PostgreSQL │ Realtime │ Storage                 │
+│                      │                                  │
+│    ┌─────────────────┼────────────────────┐             │
+│    ▼                 ▼                    ▼             │
+│  [7]              [8]                   [9]             │
+│  Strategy       Copy-Trading           Live Exec        │
+│  Runtime        Sim Layer              Engine           │
+│  (sandboxed)    (Railway)              (Railway)        │
+│                      │                    │             │
+│                      ▼                    ▼             │
+│                  [10] Key Mgmt       [11] Exchange      │
+│                  (Supabase Vault)    Abstraction        │
+│                                      Layer              │
+│                      │                                  │
+│                      ▼                                  │
+│                  [12] Dashboard                         │
+│                  (Vercel, gated)                        │
+└─────────────────────────────────────────────────────────┘
+```
+
+---
+
+## The n8n "Brain Stem" — How Everything Wires Together
+
+n8n is self-hosted on Railway and acts as the **central nervous system**. Every service fires webhooks **into n8n**, and n8n routes, transforms, and triggers downstream actions.
+
+```
+Telegram command received
+        │
+        ▼
+n8n Workflow: "Route Telegram Event"
+        │
+        ├──► /backtest   ──► trigger Simulation Engine worker
+        ├──► /simulate   ──► trigger Real-Time Sim worker
+        ├──► /live_on    ──► check subscription → enable Live Exec
+        ├──► /copy       ──► trigger Copy-Trading Sim layer
+        ├──► /subscribe  ──► trigger Subscription service
+        └──► /status     ──► query Supabase → reply via Telegram
+```
+
+Every workflow in n8n:
+- **Receives** a webhook or Supabase DB trigger
+- **Validates** subscription/auth via Supabase query node
+- **Fires** the correct Railway service
+- **Writes results** back to Supabase
+- **Notifies** user via Telegram Bot API call
+
+---
+
+## Supabase as the Single Source of Truth
+
+All services read/write to Supabase. No service talks directly to another — they communicate through **Supabase Realtime channels** or **n8n webhooks**.
+
+```
+Supabase Tables (overview — detailed in later turns):
+├── users
+├── subscriptions
+├── simulations
+├── strategies
+├── trades (sim + live, flagged separately)
+├── market_snapshots
+├── copy_links
+└── audit_log
+```
+
+Supabase **Realtime** broadcasts row changes → n8n listens → routes to correct service. This is the "wired like a brain" pattern.
+
+---
+
+## Railway Service Layout
+
+Each of these gets its own Railway service (free hobby = ~5 services free, extras ~$5/mo):
+
+| Service Name | Railway Deploy | Trigger |
+|---|---|---|
+| `ifyrt-bot` | Always-on webhook listener | Telegram sends POST |
+| `ifyrt-n8n` | Self-hosted n8n | Webhook / cron |
+| `ifyrt-sim-worker` | On-demand worker | n8n triggers via HTTP |
+| `ifyrt-market-ingestor` | Always-on WS listener | Binance/Bybit stream |
+| `ifyrt-live-exec` | On-demand, isolated | n8n triggers (gated) |
+| `ifyrt-copy-worker` | On-demand worker | n8n triggers |
+
+---
+
+## Turn 1 Output: What You Can Build Now
+
+- [ ] Create Railway project, add 6 services (empty repos for now)
+- [ ] Create Supabase project, note connection string
+- [ ] Deploy n8n on Railway using `n8nio/n8n` Docker image
+- [ ] Set `N8N_BASIC_AUTH_USER`, `N8N_BASIC_AUTH_PASSWORD`, `WEBHOOK_URL` env vars
+- [ ] Create a Telegram bot via @BotFather, save token
+- [ ] Add `TELEGRAM_BOT_TOKEN` to Railway `ifyrt-bot` env vars
+
+---
+
+**Turn 2** will be: `Telegram Bot Gateway — full implementation spec, command schema, webhook setup, and the n8n event payload format it publishes.`
+
+Ready to proceed?
+
+# 🧠 IFYRT — Turn 2 of ~20
+## Section 2: Telegram Bot Gateway — Full Implementation
+
+---
+
+## What This Turn Covers
+The **complete Telegram Bot Gateway** — every command, the webhook server code, the exact event payload format it fires into n8n, error handling, and how to deploy it on Railway.
+
+---
+
+## The Bot's Role (Strict Boundaries)
+
+The bot does **one thing only**: convert Telegram input → structured event → POST to n8n.
+
+```
+❌ No business logic
+❌ No database calls
+❌ No subscription checks
+❌ No strategy execution
+✅ Parse command
+✅ Validate basic shape
+✅ Build structured event
+✅ POST to n8n webhook
+✅ Reply to user
+```
+
+This keeps it stateless, replaceable, and fast.
+
+---
+
+## Full Command Schema
+
+| Command | Params | Description |
+|---|---|---|
+| `/start` | — | Onboard user, create account |
+| `/help` | — | Show all commands |
+| `/backtest` | `[strategy] [symbol] [from] [to]` | Run historical backtest |
+| `/simulate` | `[strategy] [symbol]` | Start real-time sim |
+| `/sim_stop` | — | Stop active simulation |
+| `/status` | — | Show active sims, PnL, sub status |
+| `/live_on` | — | Enable live trading (sub-gated) |
+| `/live_off` | — | Disable live trading |
+| `/copy` | `[username]` | Simulate a peer's strategy |
+| `/copy_stop` | — | Stop copy simulation |
+| `/subscribe` | — | View/manage subscription |
+| `/dashboard` | — | Get dashboard link (sub-gated) |
+| `/strategies` | — | List available strategies |
+| `/setkey` | — | Securely submit exchange API key |
+
+---
+
+## Project Structure
+
+```
+ifyrt-bot/
+├── src/
+│   ├── index.ts          # Express server, webhook endpoint
+│   ├── parser.ts         # Command → structured event
+│   ├── dispatcher.ts     # POST event to n8n
+│   ├── replies.ts        # All Telegram reply templates
+│   ├── keyboards.ts      # Inline keyboard builders
+│   └── types.ts          # Event type definitions
+├── Dockerfile
+├── railway.toml
+└── package.json
+```
+
+---
+
+## Core Event Payload Format
+
+Every command produces a **standardized IfyrtEvent**. This is the contract between the bot and n8n — never changes shape.
+
+```typescript
+// types.ts
+export interface IfyrtEvent {
+  event_id: string;          // uuid
+  event_type: EventType;     // enum below
+  timestamp: string;         // ISO 8601
+  source: "telegram";
+  user: {
+    telegram_id: number;
+    username: string | null;
+    first_name: string;
+  };
+  payload: Record<string, unknown>; // command-specific data
+  raw_text: string;                 // original message
+  chat_id: number;                  // for reply routing
+  message_id: number;
+}
+
+export type EventType =
+  | "user.start"
+  | "user.help"
+  | "backtest.request"
+  | "simulation.start"
+  | "simulation.stop"
+  | "user.status"
+  | "live.enable"
+  | "live.disable"
+  | "copy.start"
+  | "copy.stop"
+  | "subscription.view"
+  | "dashboard.request"
+  | "strategy.list"
+  | "key.submit";
+```
+
+---
+
+## Example Payloads Per Command
+
+```typescript
+// /backtest MACD BTC/USDT 2024-01-01 2024-06-01
+{
+  event_type: "backtest.request",
+  payload: {
+    strategy: "MACD",
+    symbol: "BTC/USDT",
+    from: "2024-01-01",
+    to: "2024-06-01",
+    exchange: "binance" // default
+  }
+}
+
+// /simulate RSI ETH/USDT
+{
+  event_type: "simulation.start",
+  payload: {
+    strategy: "RSI",
+    symbol: "ETH/USDT",
+    exchange: "binance"
+  }
+}
+
+// /copy @traderpete
+{
+  event_type: "copy.start",
+  payload: {
+    target_username: "traderpete"
+  }
+}
+
+// /live_on
+{
+  event_type: "live.enable",
+  payload: {}  // n8n will do the subscription gate check
+}
+```
+
+---
+
+## index.ts — The Webhook Server
+
+```typescript
+import express from "express";
+import { parseCommand } from "./parser";
+import { dispatchToN8n } from "./dispatcher";
+import { replyToUser } from "./replies";
+
+const app = express();
+app.use(express.json());
+
+const TELEGRAM_TOKEN = process.env.TELEGRAM_BOT_TOKEN!;
+const WEBHOOK_SECRET = process.env.WEBHOOK_SECRET!;
+
+// Telegram sends all updates here
+app.post(`/webhook/${WEBHOOK_SECRET}`, async (req, res) => {
+  res.sendStatus(200); // acknowledge immediately — never make Telegram wait
+
+  const update = req.body;
+  const message = update?.message || update?.callback_query?.message;
+  if (!message?.text) return;
+
+  try {
+    const event = parseCommand(message);
+    if (!event) {
+      await replyToUser(message.chat.id, "❓ Unknown command. Try /help");
+      return;
+    }
+
+    // Fire and forget to n8n — reply comes back via n8n → bot API
+    await dispatchToN8n(event);
+
+    // Immediate acknowledgement to user
+    await replyToUser(message.chat.id, "⚡ Processing...", message.message_id);
+
+  } catch (err) {
+    console.error("Gateway error:", err);
+    await replyToUser(message.chat.id, "⚠️ Something went wrong. Try again.");
+  }
+});
+
+app.get("/health", (_, res) => res.json({ status: "ok", service: "ifyrt-bot" }));
+
+app.listen(process.env.PORT || 3000, () => {
+  console.log("Ifyrt Bot Gateway running");
+});
+```
+
+---
+
+## parser.ts — Command → Event
+
+```typescript
+import { v4 as uuid } from "uuid";
+import { IfyrtEvent } from "./types";
+
+export function parseCommand(message: any): IfyrtEvent | null {
+  const text: string = message.text.trim();
+  const parts = text.split(/\s+/);
+  const command = parts[0].toLowerCase();
+  const args = parts.slice(1);
+
+  const base = {
+    event_id: uuid(),
+    timestamp: new Date().toISOString(),
+    source: "telegram" as const,
+    user: {
+      telegram_id: message.from.id,
+      username: message.from.username ?? null,
+      first_name: message.from.first_name,
+    },
+    raw_text: text,
+    chat_id: message.chat.id,
+    message_id: message.message_id,
+  };
+
+  switch (command) {
+    case "/start":
+      return { ...base, event_type: "user.start", payload: {} };
+
+    case "/backtest":
+      return {
+        ...base,
+        event_type: "backtest.request",
+        payload: {
+          strategy: args[0] ?? null,
+          symbol: args[1] ?? null,
+          from: args[2] ?? null,
+          to: args[3] ?? null,
+          exchange: args[4] ?? "binance",
+        },
+      };
+
+    case "/simulate":
+      return {
+        ...base,
+        event_type: "simulation.start",
+        payload: {
+          strategy: args[0] ?? null,
+          symbol: args[1] ?? null,
+          exchange: args[2] ?? "binance",
+        },
+      };
+
+    case "/sim_stop":
+      return { ...base, event_type: "simulation.stop", payload: {} };
+
+    case "/live_on":
+      return { ...base, event_type: "live.enable", payload: {} };
+
+    case "/live_off":
+      return { ...base, event_type: "live.disable", payload: {} };
+
+    case "/copy":
+      return {
+        ...base,
+        event_type: "copy.start",
+        payload: { target_username: args[0]?.replace("@", "") ?? null },
+      };
+
+    case "/copy_stop":
+      return { ...base, event_type: "copy.stop", payload: {} };
+
+    case "/status":
+      return { ...base, event_type: "user.status", payload: {} };
+
+    case "/subscribe":
+      return { ...base, event_type: "subscription.view", payload: {} };
+
+    case "/dashboard":
+      return { ...base, event_type: "dashboard.request", payload: {} };
+
+    case "/strategies":
+      return { ...base, event_type: "strategy.list", payload: {} };
+
+    case "/setkey":
+      // Key is NEVER logged — payload intentionally empty, handled by n8n secure flow
+      return { ...base, event_type: "key.submit", payload: {} };
+
+    case "/help":
+      return { ...base, event_type: "user.help", payload: {} };
+
+    default:
+      return null;
+  }
+}
+```
+
+---
+
+## dispatcher.ts — Fire to n8n
+
+```typescript
+import axios from "axios";
+import { IfyrtEvent } from "./types";
+
+const N8N_WEBHOOK_URL = process.env.N8N_GATEWAY_WEBHOOK!;
+const N8N_SECRET = process.env.N8N_WEBHOOK_SECRET!;
+
+export async function dispatchToN8n(event: IfyrtEvent): Promise<void> {
+  await axios.post(N8N_WEBHOOK_URL, event, {
+    headers: {
+      "Content-Type": "application/json",
+      "X-Ifyrt-Secret": N8N_SECRET,
+    },
+    timeout: 5000,
+  });
+}
+```
+
+---
+
+## Railway Deployment
+
+**Dockerfile:**
+```dockerfile
+FROM node:20-alpine
+WORKDIR /app
+COPY package*.json ./
+RUN npm ci
+COPY . .
+RUN npm run build
+CMD ["node", "dist/index.js"]
+```
+
+**railway.toml:**
+```toml
+[build]
+builder = "dockerfile"
+
+[deploy]
+restartPolicyType = "on_failure"
+restartPolicyMaxRetries = 3
+```
+
+**Environment Variables on Railway:**
+```
+TELEGRAM_BOT_TOKEN=your_bot_token
+WEBHOOK_SECRET=random_32char_string
+N8N_GATEWAY_WEBHOOK=https://your-n8n.railway.app/webhook/ifyrt-gateway
+N8N_WEBHOOK_SECRET=another_random_secret
+PORT=3000
+```
+
+---
+
+## Register Webhook with Telegram
+
+Run this once after deploying:
+```bash
+curl "https://api.telegram.org/bot{TOKEN}/setWebhook" \
+  -d "url=https://your-bot.railway.app/webhook/{WEBHOOK_SECRET}" \
+  -d "allowed_updates=[\"message\",\"callback_query\"]" \
+  -d "drop_pending_updates=true"
+```
+
+---
+
+## Turn 2 Checklist
+
+- [ ] Create `ifyrt-bot` repo, scaffold structure above
+- [ ] Deploy to Railway, set all env vars
+- [ ] Register webhook URL with Telegram
+- [ ] Verify `/health` endpoint returns `200`
+- [ ] Send `/start` — confirm n8n receives the `user.start` event payload
+- [ ] All commands parse without crashing — null payloads are fine for now
+
+---
+
+**Turn 3** will be: `n8n Automation Hub — the brain stem. Every workflow, how events route, the Supabase nodes, and the full wiring map for all 14 event types.`
+
+Ready?
+
+# 🧠 IFYRT — Turn 3 of ~20
+## Section 3: n8n Automation Hub — The Brain Stem
+
+---
+
+## What This Turn Covers
+The **complete n8n wiring layer** — every workflow, how all 14 event types route, Supabase integration nodes, error handling flows, and the full deployment spec on Railway. This is the central nervous system that connects every other service.
+
+---
+
+## n8n's Role in Ifyrt
+
+```
+❌ No UI rendering
+❌ No market data processing
+❌ No strategy execution
+✅ Receive all Telegram events
+✅ Auth + subscription gate every request
+✅ Route to correct Railway service
+✅ Write outcomes to Supabase
+✅ Send replies back via Telegram Bot API
+✅ Handle retries and failures gracefully
+```
+
+---
+
+## Railway Deployment First
+
+**Deploy n8n on Railway using Docker:**
+
+```toml
+# railway.toml
+[build]
+builder = "dockerfile"
+```
+
+```dockerfile
+# Dockerfile
+FROM n8nio/n8n:latest
+
+ENV N8N_PORT=5678
+ENV N8N_PROTOCOL=https
+ENV EXECUTIONS_PROCESS=main
+ENV N8N_ENCRYPTION_KEY=${N8N_ENCRYPTION_KEY}
+
+EXPOSE 5678
+```
+
+**Required Environment Variables on Railway:**
+```
+N8N_BASIC_AUTH_ACTIVE=true
+N8N_BASIC_AUTH_USER=admin
+N8N_BASIC_AUTH_PASSWORD=strong_password_here
+N8N_ENCRYPTION_KEY=32_char_random_string
+WEBHOOK_URL=https://your-n8n.railway.app
+N8N_HOST=your-n8n.railway.app
+N8N_PROTOCOL=https
+
+# Supabase
+SUPABASE_URL=https://xxx.supabase.co
+SUPABASE_SERVICE_KEY=your_service_role_key
+
+# Telegram
+TELEGRAM_BOT_TOKEN=your_bot_token
+
+# Internal service URLs
+SIM_WORKER_URL=https://ifyrt-sim-worker.railway.app
+LIVE_EXEC_URL=https://ifyrt-live-exec.railway.app
+COPY_WORKER_URL=https://ifyrt-copy-worker.railway.app
+MARKET_INGESTOR_URL=https://ifyrt-market-ingestor.railway.app
+
+# Shared secret (must match bot)
+N8N_WEBHOOK_SECRET=same_secret_as_bot
+```
+
+---
+
+## Master Routing Workflow
+
+This is the **single entry point** — one webhook, all traffic flows through here first.
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│          WORKFLOW 1: "Ifyrt Gateway Router"                 │
+│                                                             │
+│  [Webhook: POST /webhook/ifyrt-gateway]                     │
+│              │                                              │
+│              ▼                                              │
+│  [Validate X-Ifyrt-Secret header]                           │
+│       │ fail → 401, log, stop                               │
+│       │ pass ↓                                              │
+│              ▼                                              │
+│  [Extract event_type from body]                             │
+│              │                                              │
+│              ▼                                              │
+│  [Switch Node — route by event_type]                        │
+│    │          │         │        │         │                │
+│    ▼          ▼         ▼        ▼         ▼                │
+│ user.*   backtest  simulate   live.*   copy.*               │
+│ flows    workflow  workflow  workflow  workflow              │
+│    │                                       │                │
+│    ▼                                       ▼                │
+│ subscription                          strategy.*            │
+│ workflow                              dashboard.*           │
+└─────────────────────────────────────────────────────────────┘
+```
+
+---
+
+## The 8 Core Workflows
+
+### Workflow 1 — Gateway Router
+*(shown above — entry point for everything)*
+
+---
+
+### Workflow 2 — User Onboarding (`user.start`)
+
+```
+[Webhook trigger: user.start event]
+        │
+        ▼
+[Supabase: SELECT * FROM users WHERE telegram_id = $id]
+        │
+        ├── EXISTS → update last_seen → send welcome back message
+        │
+        └── NOT EXISTS →
+              │
+              ▼
+        [Supabase: INSERT INTO users]
+        [Supabase: INSERT INTO subscriptions (free tier, trial_start=now)]
+              │
+              ▼
+        [Send Telegram welcome message with inline keyboard]
+              │
+              Buttons: [▶ Try Backtest] [📊 Strategies] [💳 Subscribe]
+```
+
+**Telegram Welcome Message Template:**
+```
+👋 Welcome to Ifyrt!
+
+Trade smarter — risk free.
+
+You have a 7-day free trial. Here's what you can do:
+
+📈 /backtest — test strategies on history
+⚡ /simulate — real-time paper trading  
+👥 /copy — simulate a peer's strategy
+📊 /strategies — browse available strategies
+
+Your trial ends: {trial_end_date}
+
+Ready to start? Try /strategies
+```
+
+---
+
+### Workflow 3 — Subscription Gate (Sub-Workflow)
+
+This is **called by every other workflow** before doing anything. It's a reusable sub-workflow.
+
+```
+[Input: telegram_id]
+        │
+        ▼
+[Supabase: SELECT tier, trial_end, paid_until 
+           FROM subscriptions 
+           WHERE user_id = (SELECT id FROM users WHERE telegram_id = $id)]
+        │
+        ▼
+[IF tier = 'paid' AND paid_until > now()] → return { access: true, tier: 'paid' }
+        │
+[ELSE IF tier = 'trial' AND trial_end > now()] → return { access: true, tier: 'trial' }
+        │
+[ELSE] → 
+        │
+        ▼
+  [Send Telegram message]
+  "⛔ Your trial has ended. 
+   Subscribe for $6.99/month to continue.
+   /subscribe to get started."
+        │
+        ▼
+  [return { access: false }]
+  [halt parent workflow]
+```
+
+---
+
+### Workflow 4 — Backtest Request (`backtest.request`)
+
+```
+[Receive backtest.request event]
+        │
+        ▼
+[Call Sub-Workflow 3: Subscription Gate]
+  access: false → stop (message already sent)
+  access: true  ↓
+        │
+        ▼
+[Validate payload: strategy, symbol, from, to all present?]
+  missing → Send "⚠️ Usage: /backtest STRATEGY SYMBOL FROM TO"
+  valid   ↓
+        │
+        ▼
+[Supabase: INSERT INTO simulations
+  { user_id, type:'backtest', strategy, symbol, 
+    from_date, to_date, status:'queued' }
+  → returns simulation_id]
+        │
+        ▼
+[HTTP POST to SIM_WORKER_URL/run]
+  body: { simulation_id, type:'backtest', ...payload }
+        │
+        ▼
+[Send Telegram: "⏳ Backtest queued — ID: {simulation_id}
+ I'll notify you when complete."]
+```
+
+---
+
+### Workflow 5 — Real-Time Simulation (`simulation.start` / `simulation.stop`)
+
+```
+[simulation.start]
+        │
+        ▼
+[Subscription Gate]
+        │
+        ▼
+[Check: user already has active sim?]
+  Supabase: SELECT id FROM simulations 
+            WHERE user_id = $id AND status = 'running'
+  EXISTS → "⚠️ You have an active simulation. Use /sim_stop first."
+  NONE   ↓
+        │
+        ▼
+[INSERT INTO simulations { status: 'running', type: 'realtime' }]
+        │
+        ▼
+[HTTP POST to SIM_WORKER_URL/start]
+  body: { simulation_id, strategy, symbol, exchange }
+        │
+        ▼
+[Send Telegram: "✅ Simulation started!
+  Strategy: {strategy} | Pair: {symbol}
+  Use /status to track PnL
+  Use /sim_stop to end"]
+
+---
+
+[simulation.stop]
+        │
+        ▼
+[Supabase: UPDATE simulations SET status='stopped' 
+           WHERE user_id=$id AND status='running']
+        │
+        ▼
+[HTTP POST to SIM_WORKER_URL/stop  { user_id }]
+        │
+        ▼
+[Fetch final PnL from Supabase → send summary to Telegram]
+```
+
+---
+
+### Workflow 6 — Live Trading Gate (`live.enable` / `live.disable`)
+
+```
+[live.enable]
+        │
+        ▼
+[Subscription Gate — PAID tier ONLY]
+  trial → "⛔ Live trading requires a paid subscription. /subscribe"
+  free  → same
+  paid  ↓
+        │
+        ▼
+[Check: API key exists for user?]
+  Supabase: SELECT id FROM api_keys WHERE user_id=$id
+  NONE → "🔑 No API key found. Use /setkey to add one first."
+  EXISTS ↓
+        │
+        ▼
+[HTTP POST to LIVE_EXEC_URL/enable  { user_id }]
+        │
+        ▼
+[Supabase: UPDATE users SET live_mode=true WHERE id=$id]
+        │
+        ▼
+[Send Telegram: "⚠️ LIVE MODE ENABLED
+  Real funds are now at risk.
+  Use /live_off to disable at any time.
+  Current strategy will execute on real orders."]
+```
+
+---
+
+### Workflow 7 — Copy Trading (`copy.start` / `copy.stop`)
+
+```
+[copy.start]
+        │
+        ▼
+[Subscription Gate]
+        │
+        ▼
+[Supabase: SELECT u.id, c.copy_enabled 
+           FROM users u 
+           JOIN copy_permissions c ON c.user_id = u.id
+           WHERE u.username = $target_username]
+  NOT FOUND     → "❌ User @{name} not found on Ifyrt"
+  copy_enabled=false → "🔒 @{name} hasn't enabled copy sharing"
+  FOUND + enabled ↓
+        │
+        ▼
+[INSERT INTO copy_links 
+  { follower_id, leader_id, status:'active' }]
+        │
+        ▼
+[HTTP POST to COPY_WORKER_URL/start
+  { follower_id, leader_id }]
+        │
+        ▼
+[Send Telegram: "✅ Now simulating @{name}'s strategy
+  All trades are SIMULATED — no real funds used
+  Use /copy_stop to end
+  Use /status to see simulated PnL"]
+```
+
+---
+
+### Workflow 8 — Status Check (`user.status`)
+
+```
+[user.status]
+        │
+        ▼
+[Supabase: parallel queries]
+  ├── Active simulations for user
+  ├── Active copy links
+  ├── Current subscription tier + expiry
+  └── Latest PnL across all active sims
+        │
+        ▼
+[Compose status message]
+        │
+        ▼
+[Send Telegram:]
+"📊 Ifyrt Status
+
+Subscription: {tier} (expires {date})
+Live Mode: {ON/OFF}
+
+Active Simulations:
+• {strategy} / {symbol} — PnL: {+/-X%}
+
+Copy Trading:
+• Following @{name} — Sim PnL: {+/-X%}
+
+Use /sim_stop or /copy_stop to end sessions."
+```
+
+---
+
+## Error Handling Workflow (Global)
+
+Every workflow wraps its HTTP calls in an **Error branch**:
+
+```
+[HTTP call to Railway service]
+        │
+   ┌────┴────┐
+success    error
+   │          │
+   ▼          ▼
+continue   [Log to Supabase: audit_log]
+           [Send Telegram: "⚠️ Something went wrong.
+            We've logged it. Try again in a moment."]
+           [Stop workflow]
+```
+
+---
+
+## Supabase Credentials Setup in n8n
+
+In n8n UI:
+1. Go to **Credentials → New**
+2. Select **HTTP Header Auth**
+3. Name: `Supabase Service Key`
+4. Header: `apikey` / Value: `your_service_role_key`
+5. Add second header: `Authorization: Bearer your_service_role_key`
+
+All Supabase calls use **HTTP Request nodes** hitting:
+```
+https://xxx.supabase.co/rest/v1/{table}
+```
+
+---
+
+## Turn 3 Checklist
+
+- [ ] Deploy n8n on Railway with all env vars set
+- [ ] Access n8n UI at your Railway URL with basic auth
+- [ ] Create credentials: Supabase, Telegram Bot API
+- [ ] Build Workflow 1 (Gateway Router) — test with Postman
+- [ ] Build Workflow 3 (Subscription Gate) as reusable sub-workflow
+- [ ] Build Workflow 2 (User Onboarding) — test with `/start`
+- [ ] Verify user row appears in Supabase after `/start`
+- [ ] Build remaining workflows 4–8 in order
+- [ ] All workflows have error branches connected
+
+---
+
+**Turn 4** will be: `API Gateway & Auth Layer — JWT design, Telegram ID → internal identity mapping, subscription enforcement middleware, and the Supabase schema for users and subscriptions.`
+
+Ready?
+
+Got it — fully caught up. Turns 1–3 are complete:
+
+- **Turn 1:** System overview + brain map (Railway/Supabase/n8n stack)
+- **Turn 2:** Telegram Bot Gateway (full TypeScript implementation)
+- **Turn 3:** n8n Automation Hub (all 8 core workflows wired)
+
+Picking up exactly where we left off:
+
+---
+
+# 🧠 IFYRT — Turn 4 of ~20
+## Section 4: API Gateway & Auth Layer — JWT, Identity Mapping & Supabase Schema
+
+---
+
+## What This Turn Covers
+The **auth contract** that every service trusts. Telegram ID → internal UUID mapping, stateless JWT issuance, subscription enforcement middleware, and the complete Supabase schema for `users` and `subscriptions`.
+
+---
+
+## The Auth Flow (End to End)
+
+```
+Telegram User sends /command
+        │
+        ▼
+ifyrt-bot: extracts telegram_id → fires event to n8n
+        │
+        ▼
+n8n Workflow 2 (Onboarding) or Workflow 3 (Sub Gate):
+  → Supabase: does this telegram_id exist?
+       ├── NO  → INSERT user → issue JWT → continue
+       └── YES → fetch user.id → issue JWT → continue
+        │
+        ▼
+JWT attached to all downstream HTTP calls to Railway services
+        │
+        ▼
+Each Railway service verifies JWT → extracts user_id → acts
+```
+
+The bot never holds identity — **Supabase is the registry**, **JWT is the passport**.
+
+---
+
+## Supabase Schema — `users` Table
+
+```sql
+CREATE TABLE users (
+  id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  telegram_id     BIGINT UNIQUE NOT NULL,
+  username        TEXT,
+  first_name      TEXT NOT NULL,
+  live_mode       BOOLEAN NOT NULL DEFAULT false,
+  copy_enabled    BOOLEAN NOT NULL DEFAULT false,
+  created_at      TIMESTAMPTZ NOT NULL DEFAULT now(),
+  last_seen       TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+-- Index for the most common lookup
+CREATE INDEX idx_users_telegram_id ON users(telegram_id);
+```
+
+**Devil's advocate check:** Could we just use `telegram_id` as the primary key and skip the UUID? 
+Yes — and it would simplify lookups. But UUID as PK future-proofs the system: if we ever add OAuth login, web dashboard accounts, or API keys that aren't Telegram-sourced, we're not tied to a Telegram integer as the identity anchor. The UUID is worth the extra join.
+
+---
+
+## Supabase Schema — `subscriptions` Table
+
+```sql
+CREATE TABLE subscriptions (
+  id            UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id       UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  tier          TEXT NOT NULL DEFAULT 'free'
+                  CHECK (tier IN ('free', 'trial', 'paid')),
+  trial_start   TIMESTAMPTZ,
+  trial_end     TIMESTAMPTZ,
+  paid_since    TIMESTAMPTZ,
+  paid_until    TIMESTAMPTZ,
+  stripe_customer_id  TEXT,
+  stripe_sub_id       TEXT,
+  updated_at    TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE UNIQUE INDEX idx_subscriptions_user ON subscriptions(user_id);
+CREATE INDEX idx_subscriptions_tier ON subscriptions(tier);
+```
+
+**Logic check:** `tier` is a text enum enforced by CHECK constraint. Could this break if we add a new tier later? Yes — ALTER TABLE will be needed, but that's a single migration and far simpler than a separate tiers table for this scale.
+
+---
+
+## JWT Design
+
+JWTs are issued by n8n after identity resolution and passed to all Railway workers.
+
+```typescript
+// JWT Payload (what gets signed)
+interface IfyrtJWTPayload {
+  sub: string;          // user UUID (internal)
+  telegram_id: number;  // for fast correlation
+  tier: "free" | "trial" | "paid";
+  live_mode: boolean;
+  iat: number;
+  exp: number;          // short-lived: 15 minutes
+}
+```
+
+**Why 15-minute expiry?** These tokens are passed between internal Railway services only — they never leave server-side. Short expiry limits blast radius if one is intercepted. n8n re-issues on each user interaction so users never feel it expire.
+
+**Devil's advocate:** Does JWT even make sense here if all calls are internal service-to-service? You could use a shared secret header (like we already do with `X-Ifyrt-Secret`) everywhere. That's simpler. The counter-argument: JWT carries user context (tier, user_id, live_mode) *inside the token* — workers don't need to hit Supabase to know who they're serving. The statelessness justifies the complexity at scale.
+
+---
+
+## JWT Issuance — n8n HTTP Function Node
+
+In n8n, after the Supabase user lookup, add a **Function node** that signs the JWT:
+
+```javascript
+// n8n Function Node: "Issue JWT"
+const jwt = require('jsonwebtoken');
+
+const user = $input.first().json; // from Supabase SELECT
+
+const payload = {
+  sub: user.id,
+  telegram_id: user.telegram_id,
+  tier: $node["Subscription Gate"].json.tier,
+  live_mode: user.live_mode,
+};
+
+const token = jwt.sign(payload, $env.JWT_SECRET, { expiresIn: '15m' });
+
+return [{ json: { ...user, jwt: token } }];
+```
+
+Add `JWT_SECRET` (32+ char random string) to Railway n8n env vars.
+
+---
+
+## JWT Verification Middleware (Railway Workers)
+
+Every Railway service (`ifyrt-sim-worker`, `ifyrt-live-exec`, etc.) runs this middleware:
+
+```typescript
+// middleware/auth.ts
+import jwt from "jsonwebtoken";
+import { Request, Response, NextFunction } from "express";
+
+export interface AuthenticatedRequest extends Request {
+  user?: {
+    sub: string;
+    telegram_id: number;
+    tier: "free" | "trial" | "paid";
+    live_mode: boolean;
+  };
+}
+
+export function requireAuth(
+  req: AuthenticatedRequest,
+  res: Response,
+  next: NextFunction
+) {
+  const token = req.headers.authorization?.replace("Bearer ", "");
+  if (!token) return res.status(401).json({ error: "No token" });
+
+  try {
+    const payload = jwt.verify(token, process.env.JWT_SECRET!) as any;
+    req.user = payload;
+    next();
+  } catch {
+    return res.status(401).json({ error: "Invalid or expired token" });
+  }
+}
+
+// Tier-specific guards
+export function requirePaid(
+  req: AuthenticatedRequest,
+  res: Response,
+  next: NextFunction
+) {
+  if (req.user?.tier !== "paid") {
+    return res.status(403).json({ error: "Paid subscription required" });
+  }
+  next();
+}
+
+export function requireTrialOrPaid(
+  req: AuthenticatedRequest,
+  res: Response,
+  next: NextFunction
+) {
+  if (!["trial", "paid"].includes(req.user?.tier ?? "")) {
+    return res.status(403).json({ error: "Trial or paid subscription required" });
+  }
+  next();
+}
+```
+
+---
+
+## How n8n Passes JWT to Workers
+
+In every n8n HTTP Request node that calls a Railway worker:
+
+```
+Headers:
+  Authorization: Bearer {{ $json.jwt }}
+  Content-Type: application/json
+```
+
+The JWT flows: **n8n → Railway worker → verified → req.user populated → business logic runs**.
+
+---
+
+## Rate Limiting (API Gateway Level)
+
+Add this to every Railway worker's `index.ts`:
+
+```typescript
+import rateLimit from "express-rate-limit";
+
+// Per-user rate limit (keyed by JWT sub)
+const limiter = rateLimit({
+  windowMs: 60 * 1000,  // 1 minute
+  max: 30,              // 30 requests/min per user
+  keyGenerator: (req: any) => req.user?.sub ?? req.ip,
+  message: { error: "Too many requests" },
+});
+
+app.use(requireAuth);  // auth first
+app.use(limiter);      // then rate limit
+```
+
+**Devil's advocate:** 30 req/min might be too restrictive for real-time sim status polling. Solution: `/status` endpoints can use a looser limiter (60/min), while mutation endpoints (`/run`, `/start`, `/enable`) stay at 30.
+
+---
+
+## Environment Variables (All Workers)
+
+```
+JWT_SECRET=32+_char_random_string   # same across all workers
+```
+
+Add this to Railway as a **shared variable** so it's consistent without duplication.
+
+---
+
+## Turn 4 Checklist
+
+- [ ] Run both `CREATE TABLE` statements in Supabase SQL editor
+- [ ] Verify indexes created (`\d users` in Supabase SQL)
+- [ ] Add `JWT_SECRET` env var to n8n and all Railway workers
+- [ ] Add JWT Function node to n8n after every Supabase user lookup
+- [ ] Install `jsonwebtoken` + `express-rate-limit` in all worker repos
+- [ ] Copy `middleware/auth.ts` into `ifyrt-sim-worker`, `ifyrt-live-exec`, `ifyrt-copy-worker`
+- [ ] Test: `/start` → user row appears in Supabase → JWT issued → logged in n8n execution
+
+---
+
+**Turn 5** will be: `Multi-Tenant Simulation Engine — the core product. Worker architecture, isolated execution per user, the simulated matching engine, and the full Railway deployment spec for \`ifyrt-sim-worker\`.`
+
+Ready?
+
+Smart call. Here's how I'm restructuring the rest:
+
+- **Block A (this turn):** Simulation Core — market data ingestor + matching engine + strategy runtime + unified execution interface (all one brain)
+- **Block B (next):** Live Trading + Key Vault — coupled by design
+- **Block C (next):** Copy Trading + Dashboard — both optional/gated, same pattern
+- **Block D (final):** Full persistence schema + subscriptions/Stripe + exchange abstraction + observability + launch checklist
+
+---
+
+# 🧠 IFYRT — Block A: The Simulation Core
+## Market Data · Matching Engine · Strategy Runtime · Unified Execution Interface
+
+---
+
+## How These Four Fit Together
+
+```
+[Binance/Bybit WebSocket]
+         │
+         ▼
+[ifyrt-market-ingestor]  ──► Supabase: market_snapshots
+         │                              order_book_deltas
+         │ HTTP push / Supabase Realtime
+         ▼
+[ifyrt-sim-worker]
+    │
+    ├── pulls snapshot for this symbol/exchange
+    ├── feeds into Strategy Runtime → signal produced
+    ├── signal → Simulated Matching Engine
+    └── fill result → Supabase: trades, simulations (PnL updated)
+         │
+         ▼
+    n8n picks up completion → notifies user via Telegram
+```
+
+These four services are a pipeline. They're designed together.
+
+---
+
+## Service 1: `ifyrt-market-ingestor`
+
+**Role:** Always-on WebSocket listener. Ingests public market data, normalizes it, stores it. Nothing else.
+
+### Project Structure
+
+```
+ifyrt-market-ingestor/
+├── src/
+│   ├── index.ts          # entry, manages WS connections
+│   ├── feeds/
+│   │   ├── binance.ts    # Binance WS handler
+│   │   └── bybit.ts      # Bybit WS handler
+│   ├── normalizer.ts     # raw → unified schema
+│   ├── store.ts          # writes to Supabase
+│   └── types.ts
+├── Dockerfile
+└── package.json
+```
+
+### Unified Market Data Schema
+
+Every exchange normalizes to this before storage — nothing downstream ever sees raw exchange format:
+
+```typescript
+// types.ts
+export interface MarketSnapshot {
+  id?: string;
+  exchange: "binance" | "bybit";
+  symbol: string;               // "BTC/USDT"
+  bid: number;
+  ask: number;
+  last: number;
+  volume_24h: number;
+  timestamp: string;            // ISO 8601
+  order_book: {
+    bids: [number, number][];   // [price, qty][]
+    asks: [number, number][];
+  };
+}
+```
+
+### Binance Feed Handler
+
+```typescript
+// feeds/binance.ts
+import WebSocket from "ws";
+import { normalizeSnapshot } from "../normalizer";
+import { storeSnapshot } from "../store";
+
+const BINANCE_WS = "wss://stream.binance.com:9443/stream";
+
+export function connectBinance(symbols: string[]) {
+  // e.g. ["btcusdt", "ethusdt"]
+  const streams = symbols.flatMap(s => [
+    `${s}@bookTicker`,
+    `${s}@trade`,
+  ]).join("/");
+
+  const ws = new WebSocket(`${BINANCE_WS}?streams=${streams}`);
+
+  ws.on("message", async (raw) => {
+    const data = JSON.parse(raw.toString());
+    const snapshot = normalizeSnapshot("binance", data);
+    if (snapshot) await storeSnapshot(snapshot);
+  });
+
+  ws.on("close", () => {
+    console.warn("Binance WS closed — reconnecting in 3s");
+    setTimeout(() => connectBinance(symbols), 3000);
+  });
+
+  ws.on("error", (err) => console.error("Binance WS error:", err));
+}
+```
+
+Auto-reconnect on close — always-on means no gaps in data.
+
+### Supabase Storage
+
+```sql
+-- market_snapshots: latest price state per symbol/exchange
+CREATE TABLE market_snapshots (
+  id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  exchange    TEXT NOT NULL,
+  symbol      TEXT NOT NULL,
+  bid         NUMERIC NOT NULL,
+  ask         NUMERIC NOT NULL,
+  last        NUMERIC NOT NULL,
+  volume_24h  NUMERIC,
+  order_book  JSONB NOT NULL,   -- { bids: [], asks: [] }
+  captured_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+-- Keep only last 500 rows per symbol (no runaway storage)
+CREATE INDEX idx_snapshots_symbol_time 
+  ON market_snapshots(exchange, symbol, captured_at DESC);
+
+-- Historical OHLCV for backtesting
+CREATE TABLE ohlcv (
+  id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  exchange    TEXT NOT NULL,
+  symbol      TEXT NOT NULL,
+  interval    TEXT NOT NULL,    -- '1m','5m','1h','1d'
+  open_time   TIMESTAMPTZ NOT NULL,
+  open        NUMERIC NOT NULL,
+  high        NUMERIC NOT NULL,
+  low         NUMERIC NOT NULL,
+  close       NUMERIC NOT NULL,
+  volume      NUMERIC NOT NULL,
+  UNIQUE(exchange, symbol, interval, open_time)
+);
+
+CREATE INDEX idx_ohlcv_lookup 
+  ON ohlcv(exchange, symbol, interval, open_time DESC);
+```
+
+**Devil's advocate:** Storing order book as JSONB will get expensive fast at high tick rates. True — for launch, tick every 500ms per symbol, not every tick. At scale, swap `market_snapshots` for TimescaleDB or InfluxDB. Supabase JSONB is fine for the free-tier launch volume.
+
+---
+
+## Service 2: `ifyrt-sim-worker` (The Matching Engine)
+
+**Role:** Receives a simulation job, fetches market data, runs strategy, simulates fills, writes results. Horizontally scalable — one worker process per simulation.
+
+### Project Structure
+
+```
+ifyrt-sim-worker/
+├── src/
+│   ├── index.ts              # Express: /run, /start, /stop, /health
+│   ├── middleware/
+│   │   └── auth.ts           # JWT verification (from Turn 4)
+│   ├── engine/
+│   │   ├── backtest.ts       # historical simulation runner
+│   │   ├── realtime.ts       # live market sim runner
+│   │   ├── matcher.ts        # simulated order matching
+│   │   └── metrics.ts        # PnL, drawdown, Sharpe calc
+│   ├── data/
+│   │   └── fetcher.ts        # pulls from Supabase market_snapshots/ohlcv
+│   ├── strategies/
+│   │   ├── registry.ts       # strategy lookup by name
+│   │   ├── macd.ts
+│   │   ├── rsi.ts
+│   │   └── interface.ts      # Strategy contract
+│   └── types.ts
+```
+
+### Strategy Interface (The Contract)
+
+Every strategy implements this — no exceptions:
+
+```typescript
+// strategies/interface.ts
+export interface Candle {
+  open: number;
+  high: number;
+  low: number;
+  close: number;
+  volume: number;
+  timestamp: string;
+}
+
+export interface OrderSignal {
+  side: "buy" | "sell" | "hold";
+  type: "market" | "limit";
+  price?: number;       // for limit orders
+  quantity: number;     // in base asset units
+  reason?: string;      // for logging
+}
+
+export interface Strategy {
+  name: string;
+  on_tick(candles: Candle[], position: Position): OrderSignal;
+}
+
+export interface Position {
+  open: boolean;
+  side: "long" | "short" | null;
+  entry_price: number | null;
+  quantity: number;
+  unrealized_pnl: number;
+}
+```
+
+**Why `on_tick(candles, position)`?** Strategies get the full candle history they need to compute indicators, plus their current position. They return exactly one signal. Pure function — no side effects, no async, no I/O. This is what makes them deterministic and sandboxable.
+
+### Simulated Matching Engine
+
+```typescript
+// engine/matcher.ts
+import { OrderSignal, Position } from "../strategies/interface";
+import { MarketSnapshot } from "../types";
+
+export interface Fill {
+  filled: boolean;
+  fill_price: number;
+  fill_qty: number;
+  fee: number;
+  slippage: number;
+}
+
+const FEE_RATE = 0.001; // 0.1% taker fee (Binance standard)
+
+export function simulateFill(
+  signal: OrderSignal,
+  snapshot: MarketSnapshot,
+  latency_ms: number = 50
+): Fill {
+  if (signal.side === "hold") {
+    return { filled: false, fill_price: 0, fill_qty: 0, fee: 0, slippage: 0 };
+  }
+
+  const book = signal.side === "buy" ? snapshot.order_book.asks 
+                                     : snapshot.order_book.bids;
+
+  let remaining = signal.quantity;
+  let total_cost = 0;
+  let filled_qty = 0;
+
+  if (signal.type === "market") {
+    // Walk the order book — slippage emerges naturally
+    for (const [price, qty] of book) {
+      if (remaining <= 0) break;
+      const take = Math.min(remaining, qty);
+      total_cost += take * price;
+      filled_qty += take;
+      remaining -= take;
+    }
+
+    const avg_price = total_cost / filled_qty;
+    const ref_price = signal.side === "buy" ? snapshot.ask : snapshot.bid;
+    const slippage = Math.abs(avg_price - ref_price);
+    const fee = total_cost * FEE_RATE;
+
+    return { filled: true, fill_price: avg_price, fill_qty: filled_qty, fee, slippage };
+  }
+
+  if (signal.type === "limit") {
+    // Limit fills only if price crosses
+    const can_fill = signal.side === "buy"
+      ? snapshot.ask <= signal.price!
+      : snapshot.bid >= signal.price!;
+
+    if (!can_fill) return { filled: false, fill_price: 0, fill_qty: 0, fee: 0, slippage: 0 };
+
+    const fee = signal.quantity * signal.price! * FEE_RATE * 0.5; // maker fee
+    return { filled: true, fill_price: signal.price!, fill_qty: signal.quantity, fee, slippage: 0 };
+  }
+
+  return { filled: false, fill_price: 0, fill_qty: 0, fee: 0, slippage: 0 };
+}
+```
+
+**What makes this high-fidelity:** Market orders walk the real order book depth, so slippage isn't a random number — it emerges from actual liquidity at the moment of execution. Limit orders only fill when price actually crosses. Fees are applied at real exchange rates.
+
+**Devil's advocate:** Does walking the order book actually matter at this scale? For small order sizes (retail users), slippage through the top 5 book levels is usually negligible. The educational value is real though — users learn that large orders move price. Worth keeping.
+
+### Backtest Runner
+
+```typescript
+// engine/backtest.ts
+import { getOHLCV } from "../data/fetcher";
+import { getStrategy } from "../strategies/registry";
+import { simulateFill } from "./matcher";
+import { calcMetrics } from "./metrics";
+import { supabase } from "../db";
+
+export async function runBacktest(job: {
+  simulation_id: string;
+  user_id: string;
+  strategy: string;
+  symbol: string;
+  exchange: string;
+  from: string;
+  to: string;
+}) {
+  const strategy = getStrategy(job.strategy);
+  const candles = await getOHLCV(job.exchange, job.symbol, "1h", job.from, job.to);
+
+  let position = { open: false, side: null, entry_price: null, quantity: 0, unrealized_pnl: 0 };
+  const trades: any[] = [];
+  let balance = 10000; // simulated starting USDT
+
+  for (let i = 50; i < candles.length; i++) {
+    const window = candles.slice(0, i + 1);
+    const signal = strategy.on_tick(window, position);
+
+    // Fake snapshot from OHLCV for limit/market matching
+    const snapshot = candleToSnapshot(candles[i], job.exchange, job.symbol);
+    const fill = simulateFill(signal, snapshot);
+
+    if (fill.filled) {
+      const trade = recordTrade(job, signal, fill, balance);
+      trades.push(trade);
+      balance = updateBalance(balance, signal, fill);
+      position = updatePosition(position, signal, fill);
+    }
+  }
+
+  const metrics = calcMetrics(trades, balance);
+
+  // Write results to Supabase
+  await supabase.from("simulations").update({
+    status: "completed",
+    result: metrics,
+    completed_at: new Date().toISOString(),
+  }).eq("id", job.simulation_id);
+
+  await supabase.from("trades").insert(
+    trades.map(t => ({ ...t, simulation_id: job.simulation_id, user_id: job.user_id }))
+  );
+}
+```
+
+### Metrics Calculator
+
+```typescript
+// engine/metrics.ts
+export function calcMetrics(trades: any[], final_balance: number) {
+  const initial = 10000;
+  const pnl = final_balance - initial;
+  const pnl_pct = (pnl / initial) * 100;
+
+  const winning = trades.filter(t => t.pnl > 0);
+  const win_rate = trades.length ? (winning.length / trades.length) * 100 : 0;
+
+  // Max drawdown
+  let peak = initial, max_drawdown = 0, running = initial;
+  for (const t of trades) {
+    running += t.pnl;
+    if (running > peak) peak = running;
+    const dd = (peak - running) / peak * 100;
+    if (dd > max_drawdown) max_drawdown = dd;
+  }
+
+  // Sharpe (simplified, daily returns assumed)
+  const returns = trades.map(t => t.pnl / initial);
+  const avg_return = returns.reduce((a, b) => a + b, 0) / (returns.length || 1);
+  const std = Math.sqrt(returns.map(r => (r - avg_return) ** 2)
+    .reduce((a, b) => a + b, 0) / (returns.length || 1));
+  const sharpe = std > 0 ? (avg_return / std) * Math.sqrt(252) : 0;
+
+  return {
+    total_trades: trades.length,
+    win_rate: +win_rate.toFixed(2),
+    pnl,
+    pnl_pct: +pnl_pct.toFixed(2),
+    max_drawdown: +max_drawdown.toFixed(2),
+    sharpe_ratio: +sharpe.toFixed(3),
+    final_balance,
+  };
+}
+```
+
+### Trades Table (Supabase)
+
+```sql
+CREATE TABLE trades (
+  id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  simulation_id   UUID REFERENCES simulations(id) ON DELETE CASCADE,
+  user_id         UUID REFERENCES users(id) ON DELETE CASCADE,
+  is_live         BOOLEAN NOT NULL DEFAULT false,  -- critical flag
+  exchange        TEXT NOT NULL,
+  symbol          TEXT NOT NULL,
+  side            TEXT NOT NULL CHECK (side IN ('buy','sell')),
+  type            TEXT NOT NULL CHECK (type IN ('market','limit')),
+  quantity        NUMERIC NOT NULL,
+  fill_price      NUMERIC NOT NULL,
+  fee             NUMERIC NOT NULL DEFAULT 0,
+  slippage        NUMERIC NOT NULL DEFAULT 0,
+  pnl             NUMERIC,
+  strategy        TEXT,
+  executed_at     TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE INDEX idx_trades_user ON trades(user_id, executed_at DESC);
+CREATE INDEX idx_trades_sim  ON trades(simulation_id);
+-- Never mix live and sim data in queries
+CREATE INDEX idx_trades_live ON trades(is_live, user_id);
+```
+
+**The `is_live` flag is non-negotiable.** Every query that touches trades must explicitly filter by it. Mixing sim and live trade data is a correctness catastrophe.
+
+### HTTP API (Express)
+
+```typescript
+// index.ts
+import express from "express";
+import { requireAuth, requireTrialOrPaid } from "./middleware/auth";
+import { runBacktest } from "./engine/backtest";
+import { startRealtime, stopRealtime } from "./engine/realtime";
+
+const app = express();
+app.use(express.json());
+app.use(requireAuth);
+
+app.post("/run", requireTrialOrPaid, async (req, res) => {
+  res.json({ queued: true });  // respond fast
+  await runBacktest({ ...req.body, user_id: req.user!.sub });
+});
+
+app.post("/start", requireTrialOrPaid, async (req, res) => {
+  const simId = await startRealtime({ ...req.body, user_id: req.user!.sub });
+  res.json({ simulation_id: simId });
+});
+
+app.post("/stop", async (req, res) => {
+  await stopRealtime(req.user!.sub);
+  res.json({ stopped: true });
+});
+
+app.get("/health", (_, res) => res.json({ ok: true }));
+
+app.listen(process.env.PORT || 3001);
+```
+
+---
+
+## Unified Execution Interface
+
+This is the architectural guarantee that sim and live are always behaviorally identical:
+
+```typescript
+// shared/execute.ts  (used by BOTH sim-worker and live-exec)
+
+export interface ExecutionAdapter {
+  execute(signal: OrderSignal, context: ExecutionContext): Promise<Fill>;
+}
+
+export interface ExecutionContext {
+  symbol: string;
+  exchange: string;
+  user_id: string;
+  simulation_id?: string;
+}
+
+// ── Simulation adapter ──────────────────────────────────────
+export class SimulationAdapter implements ExecutionAdapter {
+  constructor(private getSnapshot: () => MarketSnapshot) {}
+
+  async execute(signal: OrderSignal, ctx: ExecutionContext): Promise<Fill> {
+    const snapshot = this.getSnapshot();
+    return simulateFill(signal, snapshot);
+  }
+}
+
+// ── Live adapter (Turn B) ───────────────────────────────────
+export class LiveAdapter implements ExecutionAdapter {
+  async execute(signal: OrderSignal, ctx: ExecutionContext): Promise<Fill> {
+    // Places real order via exchange API — identical interface
+    // Implemented in Block B
+    throw new Error("Not yet implemented");
+  }
+}
+
+// ── The single entry point both engines call ────────────────
+export async function execute(
+  signal: OrderSignal,
+  ctx: ExecutionContext,
+  adapter: ExecutionAdapter
+): Promise<Fill> {
+  return adapter.execute(signal, ctx);
+}
+```
+
+The strategy runtime never knows which adapter it's talking to. That's the point.
+
+---
+
+## Block A Checklist
+
+- [ ] Deploy `ifyrt-market-ingestor` on Railway, connect to Binance WS for BTC/USDT + ETH/USDT
+- [ ] Verify `market_snapshots` rows appearing in Supabase every ~500ms
+- [ ] Run the `ohlcv` + `trades` + `market_snapshots` SQL in Supabase
+- [ ] Deploy `ifyrt-sim-worker` on Railway with JWT_SECRET env var
+- [ ] `POST /run` with a backtest payload → verify `simulations` row updates to `completed`
+- [ ] Check `trades` table populated with `is_live = false`
+- [ ] Verify n8n picks up completion via Supabase Realtime → Telegram notification fires
+
+---
+
+**Block B** is live trading + key vault — ready when you are.
+
+# 🧠 IFYRT — Block B: Live Trading + Key Vault
+## Secure Key Management · Exchange Adapters · Circuit Breakers · Live Execution Engine
+
+---
+
+## How These Fit Together
+
+```
+User runs /live_on
+        │
+        ▼
+n8n: subscription gate (paid only) → checks api_keys table
+        │
+        ▼
+ifyrt-live-exec receives job with JWT
+        │
+        ├── calls Supabase Vault → decrypts API key (in-memory only)
+        ├── instantiates exchange adapter (Binance/Bybit)
+        ├── strategy fires signal → LiveAdapter.execute()
+        ├── real order placed → real fill returned
+        ├── circuit breaker watches every fill
+        └── trade written to Supabase (is_live = true)
+```
+
+The key is **never logged, never stored decrypted, never leaves the execution environment.**
+
+---
+
+## Supabase Schema First
+
+```sql
+-- Encrypted API keys (envelope encryption via Supabase Vault)
+CREATE TABLE api_keys (
+  id            UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id       UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  exchange      TEXT NOT NULL CHECK (exchange IN ('binance','bybit')),
+  encrypted_key TEXT NOT NULL,    -- Vault secret reference, not the key itself
+  encrypted_secret TEXT NOT NULL,
+  label         TEXT,             -- user-defined e.g. "my binance main"
+  permissions   TEXT[] NOT NULL DEFAULT '{"spot"}',
+  created_at    TIMESTAMPTZ NOT NULL DEFAULT now(),
+  last_used     TIMESTAMPTZ,
+  UNIQUE(user_id, exchange)
+);
+
+-- Live trading sessions
+CREATE TABLE live_sessions (
+  id            UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id       UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  exchange      TEXT NOT NULL,
+  symbol        TEXT NOT NULL,
+  strategy      TEXT NOT NULL,
+  status        TEXT NOT NULL DEFAULT 'active'
+                  CHECK (status IN ('active','stopped','circuit_broken')),
+  started_at    TIMESTAMPTZ NOT NULL DEFAULT now(),
+  stopped_at    TIMESTAMPTZ,
+  stop_reason   TEXT
+);
+
+CREATE INDEX idx_live_sessions_user 
+  ON live_sessions(user_id, status);
+
+-- Circuit breaker state per user
+CREATE TABLE circuit_breakers (
+  user_id         UUID PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+  triggered       BOOLEAN NOT NULL DEFAULT false,
+  trigger_reason  TEXT,
+  drawdown_pct    NUMERIC,
+  triggered_at    TIMESTAMPTZ,
+  reset_at        TIMESTAMPTZ
+);
+```
+
+---
+
+## Key Submission Flow (`/setkey`)
+
+This is the most security-sensitive flow in the entire platform. The key touches exactly two places: the user's Telegram message (immediately deleted) and Supabase Vault.
+
+```
+User sends /setkey binance API_KEY API_SECRET
+        │
+        ▼
+ifyrt-bot: parses key + secret from message
+  → IMMEDIATELY deletes the Telegram message (bot API deleteMessage)
+  → fires key.submit event to n8n (payload: { exchange, key, secret })
+        │
+        ▼
+n8n: receives event
+  → stores key+secret into Supabase Vault as secrets
+  → stores the vault secret IDs (not the keys) in api_keys table
+  → sends Telegram: "🔑 Key saved securely. The message has been deleted."
+```
+
+### Bot: Delete the Message Immediately
+
+```typescript
+// In index.ts — special handling for /setkey
+if (event?.event_type === "key.submit") {
+  // Delete user's message containing the key BEFORE dispatching
+  await axios.post(
+    `https://api.telegram.org/bot${TELEGRAM_TOKEN}/deleteMessage`,
+    { chat_id: message.chat.id, message_id: message.message_id }
+  );
+  // Now fire to n8n — key is in payload but message is gone
+  await dispatchToN8n(event);
+  await replyToUser(message.chat.id, "⚡ Processing key securely...");
+}
+```
+
+**Devil's advocate:** Deleting the message doesn't help if Telegram has already logged it server-side or if the user is in a group chat. This is why `/setkey` must be enforced to work **only in private chat** — the bot should reject any `/setkey` command sent in a group and instruct the user to DM it.
+
+```typescript
+// In parser.ts
+if (command === "/setkey" && message.chat.type !== "private") {
+  await replyToUser(message.chat.id,
+    "🔒 For security, /setkey only works in a private chat with me. DM me directly.");
+  return null;
+}
+```
+
+### Supabase Vault Storage (n8n Function Node)
+
+```javascript
+// n8n Function Node: "Store API Key in Vault"
+// Supabase Vault stores secrets encrypted at rest with KMS
+
+const userId = $json.user.sub;
+const exchange = $json.payload.exchange;
+
+// Store in Vault via Supabase admin API
+const keyRes = await $http.post(
+  `${$env.SUPABASE_URL}/rest/v1/vault/secrets`,
+  {
+    name: `apikey_${userId}_${exchange}_key`,
+    secret: $json.payload.key,
+  },
+  { headers: { apikey: $env.SUPABASE_SERVICE_KEY,
+               Authorization: `Bearer ${$env.SUPABASE_SERVICE_KEY}` }}
+);
+
+const secretRes = await $http.post(
+  `${$env.SUPABASE_URL}/rest/v1/vault/secrets`,
+  {
+    name: `apikey_${userId}_${exchange}_secret`,
+    secret: $json.payload.secret,
+  },
+  { headers: { apikey: $env.SUPABASE_SERVICE_KEY,
+               Authorization: `Bearer ${$env.SUPABASE_SERVICE_KEY}` }}
+);
+
+// Store only the vault IDs in api_keys — never the raw values
+return [{
+  json: {
+    user_id: userId,
+    exchange,
+    encrypted_key: keyRes.data.id,      // vault secret ID
+    encrypted_secret: secretRes.data.id,
+  }
+}];
+```
+
+---
+
+## Service: `ifyrt-live-exec`
+
+### Project Structure
+
+```
+ifyrt-live-exec/
+├── src/
+│   ├── index.ts              # /enable, /disable, /health
+│   ├── middleware/auth.ts    # JWT + requirePaid guard
+│   ├── vault.ts              # Supabase Vault decryption
+│   ├── adapters/
+│   │   ├── interface.ts      # ExchangeAdapter contract
+│   │   ├── binance.ts        # Binance live order placement
+│   │   └── bybit.ts          # Bybit live order placement
+│   ├── circuit-breaker.ts    # Drawdown + anomaly kill switch
+│   ├── runner.ts             # Live execution loop
+│   └── types.ts
+```
+
+### Vault Decryption (In-Memory Only)
+
+```typescript
+// vault.ts
+import { createClient } from "@supabase/supabase-js";
+
+const supabase = createClient(
+  process.env.SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_KEY!
+);
+
+export interface DecryptedKeys {
+  api_key: string;
+  api_secret: string;
+}
+
+export async function getDecryptedKeys(
+  user_id: string,
+  exchange: string
+): Promise<DecryptedKeys> {
+  // Fetch vault secret IDs from api_keys table
+  const { data: keyRow, error } = await supabase
+    .from("api_keys")
+    .select("encrypted_key, encrypted_secret")
+    .eq("user_id", user_id)
+    .eq("exchange", exchange)
+    .single();
+
+  if (error || !keyRow) throw new Error("No API key found for user");
+
+  // Decrypt via Supabase Vault — decrypted value lives only in this scope
+  const { data: keySecret } = await supabase
+    .rpc("vault.decrypted_secrets")
+    .eq("id", keyRow.encrypted_key)
+    .single();
+
+  const { data: apiSecret } = await supabase
+    .rpc("vault.decrypted_secrets")
+    .eq("id", keyRow.encrypted_secret)
+    .single();
+
+  // Update last_used
+  await supabase.from("api_keys")
+    .update({ last_used: new Date().toISOString() })
+    .eq("user_id", user_id)
+    .eq("exchange", exchange);
+
+  return {
+    api_key: keySecret.decrypted_secret,
+    api_secret: apiSecret.decrypted_secret,
+  };
+  // Keys go out of scope here — never written to disk, log, or DB
+}
+```
+
+### Exchange Adapter Interface
+
+Same contract as the simulation adapter — this is what makes sim/live parity real:
+
+```typescript
+// adapters/interface.ts
+import { OrderSignal, Fill } from "../../ifyrt-sim-worker/src/types";
+
+export interface ExchangeAdapter {
+  placeOrder(signal: OrderSignal, symbol: string): Promise<Fill>;
+  cancelOrder(orderId: string): Promise<void>;
+  getBalance(): Promise<{ base: number; quote: number }>;
+}
+```
+
+### Binance Live Adapter
+
+```typescript
+// adapters/binance.ts
+import Binance from "binance-api-node";
+import { ExchangeAdapter } from "./interface";
+import { OrderSignal, Fill } from "../../shared/types";
+
+export class BinanceAdapter implements ExchangeAdapter {
+  private client: ReturnType<typeof Binance>;
+
+  constructor(apiKey: string, apiSecret: string) {
+    this.client = Binance({ apiKey, apiSecret });
+    // Keys live only as a reference in the closure
+  }
+
+  async placeOrder(signal: OrderSignal, symbol: string): Promise<Fill> {
+    const binanceSymbol = symbol.replace("/", ""); // BTC/USDT → BTCUSDT
+
+    const order = await this.client.order({
+      symbol: binanceSymbol,
+      side: signal.side.toUpperCase() as "BUY" | "SELL",
+      type: signal.type.toUpperCase() as "MARKET" | "LIMIT",
+      quantity: signal.quantity.toString(),
+      ...(signal.type === "limit" && { price: signal.price!.toString() }),
+      timeInForce: signal.type === "limit" ? "GTC" : undefined,
+    });
+
+    const fill_price = parseFloat(order.fills?.[0]?.price ?? order.price);
+    const fee = order.fills?.reduce(
+      (sum, f) => sum + parseFloat(f.commission), 0
+    ) ?? 0;
+
+    return {
+      filled: order.status === "FILLED",
+      fill_price,
+      fill_qty: parseFloat(order.executedQty),
+      fee,
+      slippage: 0, // real fills don't need synthetic slippage
+    };
+  }
+
+  async cancelOrder(orderId: string): Promise<void> {
+    // implementation
+  }
+
+  async getBalance(): Promise<{ base: number; quote: number }> {
+    const account = await this.client.accountInfo();
+    // parse balances
+    return { base: 0, quote: 0 }; // simplified
+  }
+}
+```
+
+### Circuit Breaker
+
+This runs on every live fill. If drawdown exceeds threshold, it kills the session and locks the user out of live mode until they manually reset.
+
+```typescript
+// circuit-breaker.ts
+import { supabase } from "./db";
+
+const MAX_DRAWDOWN_PCT = 10; // 10% session drawdown kills live mode
+const MAX_CONSECUTIVE_LOSSES = 5;
+
+export interface CircuitState {
+  peak_balance: number;
+  current_balance: number;
+  consecutive_losses: number;
+}
+
+export async function checkCircuit(
+  user_id: string,
+  state: CircuitState,
+  session_id: string
+): Promise<{ tripped: boolean; reason?: string }> {
+  const drawdown = 
+    (state.peak_balance - state.current_balance) / state.peak_balance * 100;
+
+  let reason: string | null = null;
+
+  if (drawdown >= MAX_DRAWDOWN_PCT) {
+    reason = `Drawdown limit hit: ${drawdown.toFixed(2)}%`;
+  } else if (state.consecutive_losses >= MAX_CONSECUTIVE_LOSSES) {
+    reason = `${MAX_CONSECUTIVE_LOSSES} consecutive losses`;
+  }
+
+  if (reason) {
+    // Kill the session
+    await supabase.from("live_sessions").update({
+      status: "circuit_broken",
+      stopped_at: new Date().toISOString(),
+      stop_reason: reason,
+    }).eq("id", session_id);
+
+    // Lock user out of live mode
+    await supabase.from("users")
+      .update({ live_mode: false })
+      .eq("id", user_id);
+
+    await supabase.from("circuit_breakers").upsert({
+      user_id,
+      triggered: true,
+      trigger_reason: reason,
+      drawdown_pct: drawdown,
+      triggered_at: new Date().toISOString(),
+    });
+
+    return { tripped: true, reason };
+  }
+
+  return { tripped: false };
+}
+```
+
+When the circuit trips, n8n picks up the `circuit_breakers` row insert via Supabase Realtime and immediately fires this Telegram message:
+
+```
+🚨 LIVE MODE SUSPENDED
+
+Reason: Drawdown limit hit: 11.4%
+
+Your live session has been automatically stopped to protect your funds.
+
+No further orders will be placed.
+
+Use /status to review your session.
+Use /live_on to re-enable when ready (manual reset required).
+```
+
+**Devil's advocate:** A 10% drawdown threshold is arbitrary — for some strategies this is noise, for others it's catastrophic. The right answer is to make it user-configurable at session start. Add a `max_drawdown_pct` column to `live_sessions` and let `/live_on [strategy] [symbol] --stop-loss 5` override the default. Launch with 10% hardcoded, make it configurable in v2.
+
+### Live Runner
+
+```typescript
+// runner.ts
+import { getDecryptedKeys } from "./vault";
+import { BinanceAdapter } from "./adapters/binance";
+import { BybitAdapter } from "./adapters/bybit";
+import { checkCircuit, CircuitState } from "./circuit-breaker";
+import { getStrategy } from "../../shared/strategies/registry";
+import { supabase } from "./db";
+
+const activeSessions = new Map<string, { running: boolean }>();
+
+export async function startLiveSession(job: {
+  user_id: string;
+  session_id: string;
+  strategy: string;
+  symbol: string;
+  exchange: string;
+}) {
+  const keys = await getDecryptedKeys(job.user_id, job.exchange);
+  const adapter = job.exchange === "binance"
+    ? new BinanceAdapter(keys.api_key, keys.api_secret)
+    : new BybitAdapter(keys.api_key, keys.api_secret);
+
+  // Keys are now referenced only inside adapter closure
+  // vault.ts local variables are out of scope
+
+  const strategy = getStrategy(job.strategy);
+  const state: CircuitState = {
+    peak_balance: 10000, // fetched from exchange in production
+    current_balance: 10000,
+    consecutive_losses: 0,
+  };
+
+  activeSessions.set(job.user_id, { running: true });
+
+  while (activeSessions.get(job.user_id)?.running) {
+    // Fetch latest candles
+    const { data: candles } = await supabase
+      .from("ohlcv")
+      .select("*")
+      .eq("exchange", job.exchange)
+      .eq("symbol", job.symbol)
+      .order("open_time", { ascending: false })
+      .limit(100);
+
+    const signal = strategy.on_tick(candles!.reverse(), position);
+    
+    if (signal.side !== "hold") {
+      const fill = await adapter.placeOrder(signal, job.symbol);
+
+      // Write real trade
+      await supabase.from("trades").insert({
+        simulation_id: null,
+        user_id: job.user_id,
+        is_live: true,        // ← always explicit
+        exchange: job.exchange,
+        symbol: job.symbol,
+        side: signal.side,
+        type: signal.type,
+        quantity: fill.fill_qty,
+        fill_price: fill.fill_price,
+        fee: fill.fee,
+        slippage: fill.slippage,
+        strategy: job.strategy,
+      });
+
+      // Update circuit state
+      state.current_balance += signal.side === "sell" 
+        ? fill.fill_qty * fill.fill_price - fill.fee 
+        : -(fill.fill_qty * fill.fill_price + fill.fee);
+      if (state.current_balance > state.peak_balance) 
+        state.peak_balance = state.current_balance;
+
+      const circuit = await checkCircuit(job.user_id, state, job.session_id);
+      if (circuit.tripped) {
+        activeSessions.delete(job.user_id);
+        break;
+      }
+    }
+
+    await sleep(60_000); // poll every 1 minute (1h candle strategy)
+  }
+}
+
+export function stopLiveSession(user_id: string) {
+  activeSessions.delete(user_id);
+}
+
+const sleep = (ms: number) => new Promise(r => setTimeout(r, ms));
+```
+
+### HTTP API
+
+```typescript
+// index.ts
+app.post("/enable", requireAuth, requirePaid, async (req, res) => {
+  const { strategy, symbol, exchange } = req.body;
+  const user_id = req.user!.sub;
+
+  // Check circuit breaker isn't active
+  const { data: cb } = await supabase
+    .from("circuit_breakers")
+    .select("triggered")
+    .eq("user_id", user_id)
+    .single();
+
+  if (cb?.triggered) {
+    return res.status(403).json({ 
+      error: "Circuit breaker active. Use /live_on after manual review." 
+    });
+  }
+
+  const { data: session } = await supabase
+    .from("live_sessions")
+    .insert({ user_id, exchange, symbol, strategy })
+    .select()
+    .single();
+
+  // Non-blocking — starts the loop in background
+  startLiveSession({ user_id, session_id: session.id, strategy, symbol, exchange });
+
+  res.json({ session_id: session.id, status: "active" });
+});
+
+app.post("/disable", requireAuth, async (req, res) => {
+  stopLiveSession(req.user!.sub);
+  await supabase.from("live_sessions")
+    .update({ status: "stopped", stopped_at: new Date().toISOString() })
+    .eq("user_id", req.user!.sub)
+    .eq("status", "active");
+
+  res.json({ stopped: true });
+});
+```
+
+---
+
+## Block B Checklist
+
+- [ ] Run `api_keys`, `live_sessions`, `circuit_breakers` SQL in Supabase
+- [ ] Enable Supabase Vault in your project (Dashboard → Vault)
+- [ ] Deploy `ifyrt-live-exec` on Railway — **separate service, isolated env**
+- [ ] Set `SUPABASE_SERVICE_KEY`, `JWT_SECRET` env vars
+- [ ] Test `/setkey` in private chat → verify message deleted → vault secret created → `api_keys` row contains only vault IDs (not raw keys)
+- [ ] Test `/live_on` with trial account → confirm 403 returned
+- [ ] Test `/live_on` with paid account → session row created → runner starts
+- [ ] Trigger drawdown manually → verify `circuit_breakers` row → Telegram alert fires → `live_mode` set false
+- [ ] Verify `is_live = true` on all live trades, never mixed with sim trades
+
+---
+
+**Block C** is copy trading + dashboard — both optional, both gated, same event pattern. Ready?
+
+Got it. Full Block C, production-grade, fully designed. Give me a moment to build it out properly.
+
+---
+
+# Block C: Copy-Trading Simulation Layer + Dashboard
+
+---
+
+## Section 19 (Expanded): Copy-Trading Architecture
+
+### Design Philosophy
+
+Copy trading in TriFi/Ifyrt is **signal relay**, not account mirroring. The leader's strategy emits signals. Those signals are published to an internal bus. Followers subscribe. Each follower's signal is processed by their own **isolated simulation worker** (or live runner if they've enabled live mode). The leader never touches a follower's account. The follower never sees the leader's strategy code.
+
+This keeps the architecture clean: copy trading is just a **fan-out layer on top of the existing simulation and live execution engines**. No new execution logic. The copy layer only routes.
+
+---
+
+### Database Schema
+
+```sql
+-- Who is allowed to be copied
+CREATE TABLE copy_profiles (
+  id            UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id       UUID NOT NULL REFERENCES users(id) UNIQUE,
+  display_name  TEXT NOT NULL,           -- shown to followers, NOT username
+  is_public     BOOLEAN DEFAULT false,   -- discoverable in /copy list
+  allow_copy    BOOLEAN DEFAULT true,    -- master kill switch
+  created_at    TIMESTAMPTZ DEFAULT now()
+);
+
+-- Active copy relationships
+CREATE TABLE copy_subscriptions (
+  id            UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  follower_id   UUID NOT NULL REFERENCES users(id),
+  leader_id     UUID NOT NULL REFERENCES users(id),
+  mode          TEXT NOT NULL CHECK (mode IN ('sim', 'live')),
+  -- 'sim'  = follower simulates the copied signals (always allowed)
+  -- 'live' = follower routes copied signals to their live runner (paid only)
+  active        BOOLEAN DEFAULT true,
+  created_at    TIMESTAMPTZ DEFAULT now(),
+  UNIQUE (follower_id, leader_id)
+);
+
+-- Signal events emitted by leaders, fanned out to followers
+CREATE TABLE copy_signals (
+  id            UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  leader_id     UUID NOT NULL REFERENCES users(id),
+  strategy      TEXT NOT NULL,
+  symbol        TEXT NOT NULL,
+  exchange      TEXT NOT NULL,
+  side          TEXT NOT NULL CHECK (side IN ('buy', 'sell', 'hold')),
+  signal_type   TEXT NOT NULL CHECK (signal_type IN ('market', 'limit')),
+  price         NUMERIC,                 -- null for market orders
+  quantity      NUMERIC NOT NULL,
+  emitted_at    TIMESTAMPTZ DEFAULT now()
+);
+
+-- Per-follower execution of a copied signal
+CREATE TABLE copy_executions (
+  id            UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  signal_id     UUID NOT NULL REFERENCES copy_signals(id),
+  follower_id   UUID NOT NULL REFERENCES users(id),
+  mode          TEXT NOT NULL CHECK (mode IN ('sim', 'live')),
+  status        TEXT NOT NULL CHECK (status IN ('pending', 'executed', 'skipped', 'failed')),
+  skip_reason   TEXT,                    -- e.g. "circuit_breaker_active", "no_live_session"
+  fill_price    NUMERIC,
+  fill_qty      NUMERIC,
+  fee           NUMERIC,
+  slippage      NUMERIC,
+  executed_at   TIMESTAMPTZ
+);
+```
+
+---
+
+### Signal Emission (Leader Side)
+
+When a leader's strategy runner (sim or live) produces a non-`hold` signal, it calls `emitCopySignal()` **after** its own execution completes. The leader's trade always happens first. Copy is always derivative.
+
+```typescript
+// copy-signal-emitter.ts
+import { supabase } from "./db";
+import { redisPublisher } from "./bus";
+
+export async function emitCopySignal(params: {
+  leader_id: string;
+  strategy: string;
+  symbol: string;
+  exchange: string;
+  side: "buy" | "sell";
+  signal_type: "market" | "limit";
+  price?: number;
+  quantity: number;
+}) {
+  // 1. Check leader has copy enabled
+  const { data: profile } = await supabase
+    .from("copy_profiles")
+    .select("allow_copy")
+    .eq("user_id", params.leader_id)
+    .single();
+
+  if (!profile?.allow_copy) return;
+
+  // 2. Persist signal
+  const { data: signal } = await supabase
+    .from("copy_signals")
+    .insert({
+      leader_id:   params.leader_id,
+      strategy:    params.strategy,
+      symbol:      params.symbol,
+      exchange:    params.exchange,
+      side:        params.side,
+      signal_type: params.signal_type,
+      price:       params.price ?? null,
+      quantity:    params.quantity,
+    })
+    .select()
+    .single();
+
+  // 3. Fan out to message bus — copy worker picks this up
+  await redisPublisher.publish("copy:signals", JSON.stringify({
+    signal_id:  signal.id,
+    leader_id:  params.leader_id,
+  }));
+}
+```
+
+The signal is intentionally **minimal** — side, type, quantity, symbol. Followers never receive the strategy's internal state, indicator values, or entry reasoning. They see only what a real exchange fill receipt would show.
+
+---
+
+### Copy Worker (Fan-Out + Dispatch)
+
+A dedicated worker service `ifyrt-copy-worker` subscribes to `copy:signals`. On each signal it:
+
+1. Looks up all active followers of the leader
+2. For each follower, checks their mode (`sim` or `live`) and access rights
+3. Dispatches to the correct engine
+4. Records the execution row
+
+```typescript
+// copy-worker.ts
+import { redisSubscriber } from "./bus";
+import { supabase } from "./db";
+import { dispatchSimCopy } from "./dispatch-sim";
+import { dispatchLiveCopy } from "./dispatch-live";
+
+redisSubscriber.subscribe("copy:signals", async (message) => {
+  const { signal_id, leader_id } = JSON.parse(message);
+
+  // Fetch full signal
+  const { data: signal } = await supabase
+    .from("copy_signals")
+    .select("*")
+    .eq("id", signal_id)
+    .single();
+
+  if (!signal) return;
+
+  // Fetch all active followers
+  const { data: subs } = await supabase
+    .from("copy_subscriptions")
+    .select("follower_id, mode")
+    .eq("leader_id", leader_id)
+    .eq("active", true);
+
+  if (!subs?.length) return;
+
+  // Dispatch concurrently — one follower's failure must not block others
+  await Promise.allSettled(
+    subs.map(sub => dispatchFollower(signal, sub))
+  );
+});
+
+async function dispatchFollower(
+  signal: CopySignal,
+  sub: { follower_id: string; mode: "sim" | "live" }
+) {
+  // Insert pending execution row first (idempotency anchor)
+  const { data: exec } = await supabase
+    .from("copy_executions")
+    .insert({
+      signal_id:   signal.id,
+      follower_id: sub.follower_id,
+      mode:        sub.mode,
+      status:      "pending",
+    })
+    .select()
+    .single();
+
+  try {
+    if (sub.mode === "sim") {
+      await dispatchSimCopy(signal, sub.follower_id, exec.id);
+    } else {
+      await dispatchLiveCopy(signal, sub.follower_id, exec.id);
+    }
+  } catch (err) {
+    await supabase.from("copy_executions")
+      .update({ status: "failed", skip_reason: String(err) })
+      .eq("id", exec.id);
+  }
+}
+```
+
+---
+
+### Sim Copy Dispatch
+
+Routes the copied signal into the follower's simulation engine. Reuses the **exact same simulated matching engine** as native simulation — the only difference is the signal source.
+
+```typescript
+// dispatch-sim.ts
+import { supabase } from "./db";
+import { SimulatedMatchingEngine } from "../../sim-engine/matching-engine";
+
+export async function dispatchSimCopy(
+  signal: CopySignal,
+  follower_id: string,
+  exec_id: string
+) {
+  const engine = new SimulatedMatchingEngine({
+    exchange: signal.exchange,
+    symbol:   signal.symbol,
+  });
+
+  const fill = await engine.execute({
+    side:     signal.side as "buy" | "sell",
+    type:     signal.signal_type as "market" | "limit",
+    quantity: signal.quantity,
+    price:    signal.price,
+  });
+
+  // Record as a sim trade — linked to copy_execution, NOT a live session
+  await supabase.from("trades").insert({
+    user_id:      follower_id,
+    is_live:      false,
+    simulation_id: null,        // copy trades are not tied to a named simulation
+    copy_exec_id: exec_id,      // ← distinguishes copy sim trades from native sim trades
+    exchange:     signal.exchange,
+    symbol:       signal.symbol,
+    side:         signal.side,
+    type:         signal.signal_type,
+    quantity:     fill.fill_qty,
+    fill_price:   fill.fill_price,
+    fee:          fill.fee,
+    slippage:     fill.slippage,
+    strategy:     "copy",
+  });
+
+  await supabase.from("copy_executions").update({
+    status:      "executed",
+    fill_price:  fill.fill_price,
+    fill_qty:    fill.fill_qty,
+    fee:         fill.fee,
+    slippage:    fill.slippage,
+    executed_at: new Date().toISOString(),
+  }).eq("id", exec_id);
+}
+```
+
+---
+
+### Live Copy Dispatch
+
+Routes the copied signal into the follower's **existing live runner**. The follower must have live mode active and a live session open. If not, the execution is marked `skipped` — signals are never queued or retried.
+
+```typescript
+// dispatch-live.ts
+import { supabase } from "./db";
+import { getDecryptedKeys } from "../../live-exec/vault";
+import { BinanceAdapter } from "../../live-exec/adapters/binance";
+import { BybitAdapter } from "../../live-exec/adapters/bybit";
+import { checkCircuit } from "../../live-exec/circuit-breaker";
+
+export async function dispatchLiveCopy(
+  signal: CopySignal,
+  follower_id: string,
+  exec_id: string
+) {
+  // Gate 1: Paid subscription required for live copy
+  const { data: user } = await supabase
+    .from("users")
+    .select("subscription_status, live_mode")
+    .eq("id", follower_id)
+    .single();
+
+  if (user?.subscription_status !== "paid") {
+    return skip(exec_id, "not_paid");
+  }
+
+  // Gate 2: Follower must have live mode enabled
+  if (!user?.live_mode) {
+    return skip(exec_id, "live_mode_disabled");
+  }
+
+  // Gate 3: No active circuit breaker
+  const { data: cb } = await supabase
+    .from("circuit_breakers")
+    .select("triggered")
+    .eq("user_id", follower_id)
+    .single();
+
+  if (cb?.triggered) {
+    return skip(exec_id, "circuit_breaker_active");
+  }
+
+  // Gate 4: Active live session exists for this symbol/exchange
+  const { data: session } = await supabase
+    .from("live_sessions")
+    .select("id, exchange")
+    .eq("user_id", follower_id)
+    .eq("symbol", signal.symbol)
+    .eq("status", "active")
+    .single();
+
+  if (!session) {
+    return skip(exec_id, "no_active_session_for_symbol");
+  }
+
+  // All gates passed — execute
+  const keys = await getDecryptedKeys(follower_id, session.exchange);
+  const adapter = session.exchange === "binance"
+    ? new BinanceAdapter(keys.api_key, keys.api_secret)
+    : new BybitAdapter(keys.api_key, keys.api_secret);
+
+  const fill = await adapter.placeOrder(
+    { side: signal.side, type: signal.signal_type, quantity: signal.quantity, price: signal.price },
+    signal.symbol
+  );
+
+  await supabase.from("trades").insert({
+    user_id:      follower_id,
+    is_live:      true,
+    copy_exec_id: exec_id,
+    exchange:     session.exchange,
+    symbol:       signal.symbol,
+    side:         signal.side,
+    type:         signal.signal_type,
+    quantity:     fill.fill_qty,
+    fill_price:   fill.fill_price,
+    fee:          fill.fee,
+    slippage:     fill.slippage,
+    strategy:     "copy_live",
+  });
+
+  await supabase.from("copy_executions").update({
+    status:      "executed",
+    fill_price:  fill.fill_price,
+    fill_qty:    fill.fill_qty,
+    fee:         fill.fee,
+    slippage:    fill.slippage,
+    executed_at: new Date().toISOString(),
+  }).eq("id", exec_id);
+}
+
+async function skip(exec_id: string, reason: string) {
+  await supabase.from("copy_executions").update({
+    status: "skipped",
+    skip_reason: reason,
+  }).eq("id", exec_id);
+}
+```
+
+---
+
+### Telegram Commands for Copy Trading
+
+```
+/copy list            — browse public copy profiles
+/copy follow [id]     — subscribe to a leader (sim mode by default)
+/copy follow [id] live — subscribe in live mode (paid only, requires live session)
+/copy unfollow [id]   — remove subscription
+/copy mystats         — your performance as a follower
+/copy share           — register yourself as a copyable leader
+/copy hide            — remove yourself from public list
+/copy off             — disable all incoming copy (kill switch)
+```
+
+**n8n flow for `/copy list`:**
+Query `copy_profiles` where `is_public = true`, join to a 7-day rolling PnL aggregate from `copy_executions`. Return top 10 by sim PnL. Display as Telegram inline keyboard — each button is a `follow` action.
+
+**Devil's advocate on live copy:** A follower live-copying a leader creates a real trust and liability surface. You are routing another person's signals to a real exchange on someone's real funds. The gates above (paid, live mode on, no circuit breaker, active session) are necessary but not sufficient. In v2, add: follower-configurable position size scaling (don't blindly copy the leader's quantity — let follower set `copy_size_pct`), and a per-copy-subscription daily loss limit separate from the main circuit breaker.
+
+---
+
+## Block C Part 2: Dashboard Layer
+
+### Design Philosophy
+
+The dashboard is a **read-only window into events that already happened**. It emits zero commands, stores zero new state, introduces zero new logic paths. Every piece of data it shows already exists in Supabase. It connects via Supabase Realtime for live updates and REST for historical queries. Telegram remains the authoritative control surface.
+
+**Stack:** Next.js (App Router) + Tailwind + shadcn/ui + Supabase JS client. Deployed on Vercel. Auth via Supabase Auth — same JWT the API Gateway uses.
+
+---
+
+### Auth Flow
+
+1. User visits dashboard
+2. Redirected to Supabase Auth (magic link or OAuth)
+3. JWT issued — same `user_id` as their Telegram identity
+4. Middleware checks `subscription_status = 'paid'` before serving any page
+5. If trial or free tier → redirect to upgrade page with Stripe link
+
+```typescript
+// middleware.ts (Next.js)
+import { createMiddlewareClient } from "@supabase/auth-helpers-nextjs";
+import { NextRequest, NextResponse } from "next/server";
+
+export async function middleware(req: NextRequest) {
+  const res = NextResponse.next();
+  const supabase = createMiddlewareClient({ req, res });
+
+  const { data: { session } } = await supabase.auth.getSession();
+  if (!session) return NextResponse.redirect("/login");
+
+  const { data: user } = await supabase
+    .from("users")
+    .select("subscription_status")
+    .eq("id", session.user.id)
+    .single();
+
+  if (user?.subscription_status !== "paid") {
+    return NextResponse.redirect("/upgrade");
+  }
+
+  return res;
+}
+
+export const config = { matcher: ["/dashboard/:path*"] };
+```
+
+---
+
+### Dashboard Pages
+
+#### `/dashboard` — Overview
+
+- Current sim balance vs. starting balance (sparkline)
+- Live mode status badge (active / inactive / circuit broken)
+- Last 5 trades (sim + live, clearly labelled)
+- Active copy subscriptions summary
+- Quick-access links (all actions still performed in Telegram)
+
+#### `/dashboard/trades` — Full Trade History
+
+Filterable by: sim/live, symbol, strategy, date range, copy vs native.
+
+```typescript
+// app/dashboard/trades/page.tsx
+import { createServerComponentClient } from "@supabase/auth-helpers-nextjs";
+import { cookies } from "next/headers";
+
+export default async function TradesPage() {
+  const supabase = createServerComponentClient({ cookies });
+  const { data: { session } } = await supabase.auth.getSession();
+
+  const { data: trades } = await supabase
+    .from("trades")
+    .select("*")
+    .eq("user_id", session!.user.id)
+    .order("created_at", { ascending: false })
+    .limit(200);
+
+  return <TradeTable trades={trades ?? []} />;
+}
+```
+
+`TradeTable` renders a sortable, filterable table. `is_live` gets a red `LIVE` badge. `copy_exec_id` not null gets a `COPY` badge. Everything else is `SIM`.
+
+#### `/dashboard/simulation` — Live Sim Feed
+
+Real-time. Subscribes to Supabase Realtime on the `trades` table filtered to the current user's sim trades.
+
+```typescript
+// components/SimFeed.tsx
+"use client";
+import { useEffect, useState } from "react";
+import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
+
+export function SimFeed({ userId }: { userId: string }) {
+  const supabase = createClientComponentClient();
+  const [trades, setTrades] = useState<Trade[]>([]);
+
+  useEffect(() => {
+    const channel = supabase
+      .channel("sim-trades")
+      .on("postgres_changes", {
+        event: "INSERT",
+        schema: "public",
+        table: "trades",
+        filter: `user_id=eq.${userId}`,
+      }, (payload) => {
+        setTrades(prev => [payload.new as Trade, ...prev].slice(0, 50));
+      })
+      .subscribe();
+
+    return () => { supabase.removeChannel(channel); };
+  }, [userId]);
+
+  return (
+    <div className="space-y-2">
+      {trades.map(t => <TradePill key={t.id} trade={t} />)}
+    </div>
+  );
+}
+```
+
+#### `/dashboard/copy` — Copy Trading Panel
+
+- Leaders you follow: display name, 7-day sim PnL, last signal time, your mode (sim/live)
+- Your follower stats if you're a leader: follower count, signal count (no follower identities exposed)
+- Toggle follow/unfollow links out to Telegram deep links (`tg://resolve?domain=ifyrtbot&start=unfollow_[id]`)
+
+#### `/dashboard/performance` — Analytics
+
+All computed server-side from `trades`. No new stored aggregates — query on demand.
+
+- Win rate (sim / live / copy, separately)
+- Average PnL per trade
+- Sharpe ratio (simplified: mean return / std dev of returns)
+- Max drawdown
+- PnL by strategy
+- PnL by symbol
+- PnL over time (line chart)
+
+```typescript
+// lib/performance.ts
+export function computePerformance(trades: Trade[]) {
+  const closed = trades.filter(t => t.side === "sell"); // simplified
+  const pnls = closed.map(t => 
+    (t.fill_price - t.entry_price) * t.fill_qty - t.fee
+  );
+  const mean = pnls.reduce((a, b) => a + b, 0) / pnls.length;
+  const stdDev = Math.sqrt(
+    pnls.map(p => Math.pow(p - mean, 2)).reduce((a, b) => a + b, 0) / pnls.length
+  );
+
+  return {
+    winRate: pnls.filter(p => p > 0).length / pnls.length,
+    avgPnl: mean,
+    sharpe: stdDev > 0 ? mean / stdDev : 0,
+    maxDrawdown: computeMaxDrawdown(pnls),
+    totalPnl: pnls.reduce((a, b) => a + b, 0),
+  };
+}
+```
+
+---
+
+### Dashboard Realtime Architecture
+
+```
+Supabase Realtime (postgres_changes)
+  └── trades table INSERT       → SimFeed component
+  └── live_sessions UPDATE      → LiveStatusBadge component
+  └── circuit_breakers INSERT   → CircuitBreakerAlert (full-page warning)
+  └── copy_executions INSERT    → CopyFeed component
+```
+
+No WebSocket server to maintain. Supabase Realtime handles all of it. The dashboard is entirely passive — it receives, never sends.
+
+---
+
+### Deployment
+
+```
+ifyrt-dashboard (Vercel)
+  ├── Next.js App Router
+  ├── Supabase Auth (magic link)
+  ├── Supabase Realtime (client)
+  └── Supabase REST (server components)
+
+Environment variables:
+  NEXT_PUBLIC_SUPABASE_URL
+  NEXT_PUBLIC_SUPABASE_ANON_KEY
+  SUPABASE_SERVICE_KEY        ← server components only, never exposed to client
+```
+
+---
+
+## Block C Checklist
+
+**Copy Trading**
+- [ ] Run `copy_profiles`, `copy_subscriptions`, `copy_signals`, `copy_executions` SQL in Supabase
+- [ ] Add `copy_exec_id` column to `trades` table
+- [ ] Deploy `ifyrt-copy-worker` as isolated service on Railway
+- [ ] Wire `emitCopySignal()` into sim runner and live runner (fires after own fill)
+- [ ] Test `/copy follow` → verify `copy_subscriptions` row → signal emitted → `copy_executions` row created
+- [ ] Test live copy gates: trial user → 403; no active session → `skipped`; circuit breaker active → `skipped`
+- [ ] Test `/copy off` → `allow_copy = false` → no signals emitted
+- [ ] Verify follower never receives leader identity beyond display name
+
+**Dashboard**
+- [ ] Deploy `ifyrt-dashboard` on Vercel
+- [ ] Link Supabase Auth to same project as API services
+- [ ] Verify paid-only middleware blocks trial/free users
+- [ ] Test Realtime subscription: place a sim trade → confirm it appears in SimFeed within 1s
+- [ ] Test circuit breaker realtime: trigger manually → confirm full-page alert fires in dashboard
+- [ ] Confirm `/dashboard/copy` leader panel exposes zero follower PII
+- [ ] Performance page: verify Sharpe / drawdown calculations against known trade set
+
+---
+
+**That's the full Block C.** The entire TriFi/Ifyrt architecture is now designed end to end — ingress through copy trading through dashboard. Want to do a full system review pass next, or move straight into a specific implementation sprint?
+
+
+This is the core product layer — everything else in the stack exists to serve this. Let me design it properly.
+
+---
+
+# Block D: Scanner, Scorer & Strategy Configuration Engine
+
+---
+
+## Design Philosophy
+
+The scanner, scorer, and bot configuration system share **one unified Strategy Config object**. The exact same config that defines a backtest defines a live bot defines a sim bot. There is no translation layer, no "convert backtest params to bot params" step. You write the config once and the runtime context (backtest / sim / live) determines how it executes. This is the most important design decision in this block — it's what makes the platform feel coherent rather than bolted together.
+
+```
+Market Data
+    ↓
+Scanner (symbol selection + OHLCV fetch)
+    ↓
+Scorer (indicator pipeline → weighted score)
+    ↓
+Signal (score crosses threshold → directional signal)
+    ↓
+Strategy Config (user-defined rules that gate the signal)
+    ↓
+Execution Router (backtest engine / sim engine / live engine)
+```
+
+---
+
+## Section 1: The Strategy Config Object
+
+This is the single source of truth for everything a user configures. It lives in the database, it's referenced by backtests, sim sessions, and live sessions identically.
+
+### Database Schema
+
+```sql
+CREATE TABLE strategies (
+  id               UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id          UUID NOT NULL REFERENCES users(id),
+  name             TEXT NOT NULL,                    -- user-defined label
+  description      TEXT,
+
+  -- Scanner config
+  exchange         TEXT NOT NULL DEFAULT 'binance',
+  market_type      TEXT NOT NULL CHECK (market_type IN ('spot', 'perp', 'futures')),
+  quote_asset      TEXT NOT NULL DEFAULT 'USDT',
+  min_volume_24h   NUMERIC NOT NULL DEFAULT 1000000, -- liquidity pre-filter
+  max_symbols      INT NOT NULL DEFAULT 50,          -- cap scan width
+
+  -- Timeframe
+  timeframe        TEXT NOT NULL DEFAULT '1h',       -- 1m, 5m, 15m, 1h, 4h, 1d
+  candles_required INT NOT NULL DEFAULT 100,         -- lookback window
+
+  -- Scorer weights (must sum to 100, enforced at application layer)
+  weight_rsi       INT NOT NULL DEFAULT 20,
+  weight_bb        INT NOT NULL DEFAULT 20,
+  weight_ema       INT NOT NULL DEFAULT 15,
+  weight_volume    INT NOT NULL DEFAULT 15,
+  weight_funding   INT NOT NULL DEFAULT 15,
+  weight_patterns  INT NOT NULL DEFAULT 15,
+
+  -- Scorer thresholds
+  score_min_long   INT NOT NULL DEFAULT 60,          -- enter long above this
+  score_max_short  INT NOT NULL DEFAULT -60,         -- enter short below this
+  score_exit_long  INT NOT NULL DEFAULT -20,         -- close long below this
+  score_exit_short INT NOT NULL DEFAULT 20,          -- close short above this
+
+  -- Indicator parameters
+  rsi_period       INT NOT NULL DEFAULT 14,
+  rsi_ob           INT NOT NULL DEFAULT 70,          -- overbought
+  rsi_os           INT NOT NULL DEFAULT 30,          -- oversold
+  bb_period        INT NOT NULL DEFAULT 20,
+  bb_stddev        NUMERIC NOT NULL DEFAULT 2.0,
+  ema_fast         INT NOT NULL DEFAULT 9,
+  ema_slow         INT NOT NULL DEFAULT 21,
+  volume_ma_period INT NOT NULL DEFAULT 20,
+
+  -- Direction filter
+  direction        TEXT NOT NULL DEFAULT 'both' CHECK (direction IN ('long', 'short', 'both')),
+
+  -- Execution config (shared by sim + live)
+  margin_usdt      NUMERIC NOT NULL DEFAULT 50,
+  leverage         INT NOT NULL DEFAULT 10,
+  trailing_stop_pct NUMERIC NOT NULL DEFAULT 2.0,
+  max_positions    INT NOT NULL DEFAULT 3,
+  cooldown_candles INT NOT NULL DEFAULT 4,           -- candles before re-entry same symbol
+
+  -- Metadata
+  is_public        BOOLEAN DEFAULT false,            -- visible in copy trading / strategy marketplace
+  created_at       TIMESTAMPTZ DEFAULT now(),
+  updated_at       TIMESTAMPTZ DEFAULT now()
+);
+
+-- Bot attachments: links a strategy to a running session
+CREATE TABLE bot_sessions (
+  id               UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id          UUID NOT NULL REFERENCES users(id),
+  strategy_id      UUID NOT NULL REFERENCES strategies(id),
+  mode             TEXT NOT NULL CHECK (mode IN ('backtest', 'sim', 'live')),
+  status           TEXT NOT NULL DEFAULT 'idle'
+                   CHECK (status IN ('idle', 'running', 'paused', 'completed', 'error')),
+  
+  -- Backtest only
+  backtest_start   TIMESTAMPTZ,
+  backtest_end     TIMESTAMPTZ,
+  
+  -- Runtime state
+  started_at       TIMESTAMPTZ,
+  stopped_at       TIMESTAMPTZ,
+  last_scan_at     TIMESTAMPTZ,
+  scan_interval_s  INT NOT NULL DEFAULT 60,
+  
+  created_at       TIMESTAMPTZ DEFAULT now()
+);
+```
+
+---
+
+## Section 2: The Scanner
+
+The scanner's job is **symbol selection**. It doesn't score — it produces a filtered candidate list that the scorer then processes. Keeping these separate means you can change the liquidity filter without touching scoring logic.
+
+```typescript
+// scanner/index.ts
+import { supabase } from "../db";
+import { fetchTickers } from "../market-data/tickers";
+import { fetchOHLCV } from "../market-data/ohlcv";
+import { StrategyConfig, OHLCV, ScanResult } from "../types";
+
+export async function runScanner(config: StrategyConfig): Promise<ScanResult[]> {
+  // Step 1: Fetch all tickers for the exchange/quote pair
+  const tickers = await fetchTickers(config.exchange, config.quote_asset);
+
+  // Step 2: Liquidity pre-filter — eliminates illiquid symbols
+  // This is the same filter FancyFang uses to avoid trailing stop rejections
+  const liquid = tickers
+    .filter(t => t.volume_24h_usdt >= config.min_volume_24h)
+    .sort((a, b) => b.volume_24h_usdt - a.volume_24h_usdt)
+    .slice(0, config.max_symbols);
+
+  // Step 3: Fetch OHLCV for each candidate (concurrent, rate-limited)
+  const results = await Promise.allSettled(
+    liquid.map(ticker =>
+      fetchOHLCV({
+        exchange:  config.exchange,
+        symbol:    ticker.symbol,
+        timeframe: config.timeframe,
+        limit:     config.candles_required,
+      })
+    )
+  );
+
+  // Step 4: Return only successful fetches with enough candle history
+  return results
+    .map((r, i) => r.status === "fulfilled" ? {
+      symbol:  liquid[i].symbol,
+      candles: r.value,
+      funding: liquid[i].funding_rate ?? 0,
+    } : null)
+    .filter(Boolean)
+    .filter(r => r!.candles.length >= config.candles_required) as ScanResult[];
+}
+```
+
+---
+
+## Section 3: The Scorer
+
+The scorer takes a symbol's OHLCV data and produces a single score from **-100 to +100**. Positive = bullish pressure. Negative = bearish pressure. Each indicator contributes a partial score proportional to its weight. This is the exact same model from FancyFang, generalized so users can tune the weights.
+
+### Indicator Modules
+
+Each indicator returns a value from -1.0 to +1.0 (normalized). The scorer multiplies by weight and sums.
+
+```typescript
+// scorer/indicators/rsi.ts
+export function scoreRSI(candles: OHLCV[], period: number, ob: number, os: number): number {
+  const rsi = computeRSI(candles, period);
+  const latest = rsi[rsi.length - 1];
+
+  if (latest >= ob) return -1.0;       // overbought → bearish
+  if (latest <= os) return 1.0;        // oversold → bullish
+  if (latest > 50)  return -((latest - 50) / (ob - 50));   // graded above midpoint
+  if (latest < 50)  return (50 - latest) / (50 - os);      // graded below midpoint
+  return 0;
+}
+
+// scorer/indicators/bollinger.ts
+export function scoreBollinger(candles: OHLCV[], period: number, stddev: number): number {
+  const { upper, lower, mid } = computeBB(candles, period, stddev);
+  const price = candles[candles.length - 1].close;
+  const bandwidth = upper - lower;
+
+  if (bandwidth === 0) return 0;
+
+  const position = (price - lower) / bandwidth; // 0 = at lower, 1 = at upper
+  // >0.9 = near upper band → bearish, <0.1 = near lower band → bullish
+  return 1 - (position * 2); // maps 0→+1, 0.5→0, 1→-1
+}
+
+// scorer/indicators/ema.ts
+export function scoreEMA(candles: OHLCV[], fast: number, slow: number): number {
+  const emaFast = computeEMA(candles, fast);
+  const emaSlow = computeEMA(candles, slow);
+  const f = emaFast[emaFast.length - 1];
+  const s = emaSlow[emaSlow.length - 1];
+
+  const crossPct = (f - s) / s; // normalized distance between EMAs
+  return Math.max(-1, Math.min(1, crossPct * 20)); // clamp, amplify small differences
+}
+
+// scorer/indicators/volume.ts
+export function scoreVolume(candles: OHLCV[], maPeriod: number): number {
+  const recent = candles.slice(-maPeriod);
+  const ma = recent.reduce((s, c) => s + c.volume, 0) / maPeriod;
+  const latest = candles[candles.length - 1].volume;
+
+  const ratio = latest / ma;
+  // High volume alone isn't directional — pair with price direction
+  const priceDir = candles[candles.length - 1].close > candles[candles.length - 2].close ? 1 : -1;
+  return Math.max(-1, Math.min(1, (ratio - 1) * priceDir));
+}
+
+// scorer/indicators/funding.ts
+export function scoreFunding(fundingRate: number): number {
+  // Positive funding → longs pay shorts → bearish lean
+  // Negative funding → shorts pay longs → bullish lean
+  const clamped = Math.max(-0.002, Math.min(0.002, fundingRate)); // cap at ±0.2%
+  return -(clamped / 0.002); // normalize to -1..+1, inverted
+}
+
+// scorer/indicators/patterns.ts
+export function scorePatterns(candles: OHLCV[]): number {
+  let score = 0;
+  const signals: number[] = [];
+
+  // Hammer (bullish)
+  if (isHammer(candles))        signals.push(1.0);
+  // Engulfing bullish
+  if (isBullEngulf(candles))    signals.push(1.0);
+  // Morning star
+  if (isMorningStar(candles))   signals.push(0.8);
+  // Shooting star (bearish)
+  if (isShootingStar(candles))  signals.push(-1.0);
+  // Engulfing bearish
+  if (isBearEngulf(candles))    signals.push(-1.0);
+  // Evening star
+  if (isEveningStar(candles))   signals.push(-0.8);
+  // Doji (indecision — weakens any signal)
+  if (isDoji(candles))          signals.push(0);
+
+  if (signals.length === 0) return 0;
+  return signals.reduce((a, b) => a + b, 0) / signals.length;
+}
+```
+
+### Master Scorer
+
+```typescript
+// scorer/index.ts
+import { scoreRSI } from "./indicators/rsi";
+import { scoreBollinger } from "./indicators/bollinger";
+import { scoreEMA } from "./indicators/ema";
+import { scoreVolume } from "./indicators/volume";
+import { scoreFunding } from "./indicators/funding";
+import { scorePatterns } from "./indicators/patterns";
+import { StrategyConfig, ScanResult, ScoredSymbol } from "../types";
+
+export function scoreSymbol(result: ScanResult, config: StrategyConfig): ScoredSymbol {
+  const { candles, symbol, funding } = result;
+
+  const components = {
+    rsi:      scoreRSI(candles, config.rsi_period, config.rsi_ob, config.rsi_os),
+    bb:       scoreBollinger(candles, config.bb_period, config.bb_stddev),
+    ema:      scoreEMA(candles, config.ema_fast, config.ema_slow),
+    volume:   scoreVolume(candles, config.volume_ma_period),
+    funding:  scoreFunding(funding),
+    patterns: scorePatterns(candles),
+  };
+
+  // Weighted sum, scaled to -100..+100
+  const totalWeight = (
+    config.weight_rsi + config.weight_bb + config.weight_ema +
+    config.weight_volume + config.weight_funding + config.weight_patterns
+  );
+
+  const raw =
+    components.rsi      * config.weight_rsi      +
+    components.bb       * config.weight_bb        +
+    components.ema      * config.weight_ema       +
+    components.volume   * config.weight_volume    +
+    components.funding  * config.weight_funding   +
+    components.patterns * config.weight_patterns;
+
+  const score = Math.round((raw / totalWeight) * 100);
+
+  return {
+    symbol,
+    score,
+    components,   // stored for explainability — users can see why a symbol scored
+    candles,
+    funding,
+    scored_at: new Date().toISOString(),
+  };
+}
+
+export function runScorer(results: ScanResult[], config: StrategyConfig): ScoredSymbol[] {
+  return results
+    .map(r => scoreSymbol(r, config))
+    .sort((a, b) => Math.abs(b.score) - Math.abs(a.score)); // strongest signals first
+}
+```
+
+### Persisting Scores
+
+Every scan cycle writes scores to the database. This gives you a historical record, enables backtest replay, and feeds the dashboard leaderboard.
+
+```sql
+CREATE TABLE scan_scores (
+  id           UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  session_id   UUID NOT NULL REFERENCES bot_sessions(id),
+  strategy_id  UUID NOT NULL REFERENCES strategies(id),
+  symbol       TEXT NOT NULL,
+  score        INT NOT NULL,
+  -- Component breakdown stored as JSONB for flexibility
+  components   JSONB NOT NULL,
+  timeframe    TEXT NOT NULL,
+  candle_open  TIMESTAMPTZ NOT NULL,  -- the open time of the triggering candle
+  scored_at    TIMESTAMPTZ DEFAULT now()
+);
+
+CREATE INDEX idx_scan_scores_session   ON scan_scores(session_id, scored_at DESC);
+CREATE INDEX idx_scan_scores_symbol    ON scan_scores(symbol, scored_at DESC);
+```
+
+---
+
+## Section 4: Signal Generation
+
+The scorer produces numbers. The signal layer converts numbers into actionable trade instructions by applying the strategy config's threshold rules.
+
+```typescript
+// signal/index.ts
+import { ScoredSymbol, StrategyConfig, Signal } from "../types";
+
+export function generateSignals(
+  scored: ScoredSymbol[],
+  config: StrategyConfig,
+  openPositions: Set<string>  // symbols already in a position
+): Signal[] {
+  const signals: Signal[] = [];
+
+  for (const s of scored) {
+    // Direction filter
+    const canLong  = config.direction !== "short";
+    const canShort = config.direction !== "long";
+
+    // Entry signals
+    if (canLong && s.score >= config.score_min_long && !openPositions.has(s.symbol)) {
+      signals.push({
+        symbol:    s.symbol,
+        side:      "buy",
+        type:      "market",
+        quantity:  deriveQuantity(config),
+        score:     s.score,
+        components: s.components,
+        reason:    `Score ${s.score} ≥ long threshold ${config.score_min_long}`,
+      });
+    }
+
+    if (canShort && s.score <= config.score_max_short && !openPositions.has(s.symbol)) {
+      signals.push({
+        symbol:    s.symbol,
+        side:      "sell",
+        type:      "market",
+        quantity:  deriveQuantity(config),
+        score:     s.score,
+        components: s.components,
+        reason:    `Score ${s.score} ≤ short threshold ${config.score_max_short}`,
+      });
+    }
+
+    // Exit signals (for open positions)
+    if (openPositions.has(s.symbol)) {
+      if (s.score <= config.score_exit_long)  {
+        signals.push({ symbol: s.symbol, side: "close_long",  score: s.score, reason: "Exit: score fell below long exit threshold" });
+      }
+      if (s.score >= config.score_exit_short) {
+        signals.push({ symbol: s.symbol, side: "close_short", score: s.score, reason: "Exit: score rose above short exit threshold" });
+      }
+    }
+  }
+
+  // Respect max concurrent positions
+  const entrySignals = signals.filter(s => s.side === "buy" || s.side === "sell");
+  const exitSignals  = signals.filter(s => s.side === "close_long" || s.side === "close_short");
+  const slotsAvailable = config.max_positions - openPositions.size;
+
+  return [
+    ...exitSignals,
+    ...entrySignals.slice(0, slotsAvailable),
+  ];
+}
+
+function deriveQuantity(config: StrategyConfig): number {
+  // For perps: quantity = (margin * leverage) / entry_price
+  // Entry price unknown at signal time — resolved at execution
+  // Return notional margin for now; execution layer handles conversion
+  return config.margin_usdt;
+}
+```
+
+---
+
+## Section 5: The Scan Loop
+
+This ties scanner + scorer + signal together into a running cycle. Same loop runs in sim mode and live mode — the only difference is what happens to signals at the end.
+
+```typescript
+// scan-loop.ts
+import { runScanner } from "./scanner";
+import { runScorer } from "./scorer";
+import { generateSignals } from "./signal";
+import { supabase } from "./db";
+import { redisPublisher } from "./bus";
+
+export async function startScanLoop(session_id: string) {
+  const { data: session } = await supabase
+    .from("bot_sessions")
+    .select("*, strategies(*)")
+    .eq("id", session_id)
+    .single();
+
+  const config = session.strategies;
+  const positionTracker = new Map<string, number>(); // symbol → cooldown candles remaining
+  const openPositions   = new Set<string>();
+
+  while (true) {
+    const { data: live } = await supabase
+      .from("bot_sessions")
+      .select("status")
+      .eq("id", session_id)
+      .single();
+
+    if (live?.status !== "running") break;
+
+    // --- Scan ---
+    const scanResults = await runScanner(config);
+
+    // --- Score ---
+    const scored = runScorer(scanResults, config);
+
+    // --- Persist scores ---
+    await supabase.from("scan_scores").insert(
+      scored.map(s => ({
+        session_id,
+        strategy_id: config.id,
+        symbol:      s.symbol,
+        score:       s.score,
+        components:  s.components,
+        timeframe:   config.timeframe,
+        candle_open: s.candles[s.candles.length - 1].open_time,
+      }))
+    );
+
+    // --- Cooldown tick ---
+    for (const [sym, remaining] of positionTracker) {
+      if (remaining <= 1) positionTracker.delete(sym);
+      else positionTracker.set(sym, remaining - 1);
+    }
+
+    // --- Filter out symbols in cooldown ---
+    const eligible = scored.filter(s => !positionTracker.has(s.symbol));
+
+    // --- Generate signals ---
+    const signals = generateSignals(eligible, config, openPositions);
+
+    // --- Publish signals to execution bus ---
+    for (const signal of signals) {
+      await redisPublisher.publish(`signals:${session.mode}:${session.user_id}`, JSON.stringify({
+        session_id,
+        user_id:  session.user_id,
+        mode:     session.mode,
+        signal,
+      }));
+
+      // Track cooldowns on entry
+      if (signal.side === "buy" || signal.side === "sell") {
+        openPositions.add(signal.symbol);
+        positionTracker.set(signal.symbol, config.cooldown_candles);
+      }
+      if (signal.side === "close_long" || signal.side === "close_short") {
+        openPositions.delete(signal.symbol);
+        positionTracker.set(signal.symbol, config.cooldown_candles);
+      }
+    }
+
+    await supabase.from("bot_sessions")
+      .update({ last_scan_at: new Date().toISOString() })
+      .eq("id", session_id);
+
+    // Wait for next candle close (approximate)
+    await sleep(session.scan_interval_s * 1000);
+  }
+}
+```
+
+---
+
+## Section 6: Backtesting
+
+The backtest engine uses the **exact same scorer, signal generator, and strategy config**. The only difference is data source: instead of fetching live market data, it iterates over historical OHLCV rows candle by candle in chronological order. This is what makes backtesting trustworthy — the code path is not separate.
+
+```typescript
+// backtest/engine.ts
+import { runScorer } from "../scorer";
+import { generateSignals } from "../signal";
+import { SimulatedMatchingEngine } from "../sim-engine/matching-engine";
+import { supabase } from "../db";
+
+export async function runBacktest(session_id: string) {
+  const { data: session } = await supabase
+    .from("bot_sessions")
+    .select("*, strategies(*)")
+    .eq("id", session_id)
+    .single();
+
+  const config = session.strategies;
+
+  // Fetch historical OHLCV for all symbols in the universe
+  // Pre-filtered by liquidity (same filter as live scanner, applied at backtest start)
+  const { data: symbols } = await supabase
+    .from("ohlcv_symbols")
+    .select("symbol")
+    .eq("exchange", config.exchange)
+    .gte("avg_volume_30d", config.min_volume_24h);
+
+  const { data: allCandles } = await supabase
+    .from("ohlcv")
+    .select("*")
+    .in("symbol", symbols!.map(s => s.symbol))
+    .eq("exchange", config.exchange)
+    .eq("timeframe", config.timeframe)
+    .gte("open_time", session.backtest_start)
+    .lte("open_time", session.backtest_end)
+    .order("open_time", { ascending: true });
+
+  // Group candles by symbol
+  const bySymbol = groupBy(allCandles!, "symbol");
+
+  // Build timeline: sorted unique candle timestamps
+  const timeline = [...new Set(allCandles!.map(c => c.open_time))].sort();
+
+  const matchingEngine = new SimulatedMatchingEngine({ config });
+  const openPositions  = new Set<string>();
+  const cooldowns      = new Map<string, number>();
+  const equityCurve: { time: string; equity: number }[] = [];
+  let equity = config.margin_usdt * config.max_positions; // starting capital
+
+  for (const timestamp of timeline) {
+    // Build scan result for this candle close: for each symbol, take all
+    // candles up to and including this timestamp
+    const scanResults = Object.entries(bySymbol)
+      .map(([symbol, candles]) => {
+        const window = candles.filter(c => c.open_time <= timestamp);
+        if (window.length < config.candles_required) return null;
+        return {
+          symbol,
+          candles: window.slice(-config.candles_required),
+          funding: window[window.length - 1].funding_rate ?? 0,
+        };
+      })
+      .filter(Boolean);
+
+    // Score
+    const scored = runScorer(scanResults as any, config);
+
+    // Cooldown tick
+    for (const [sym, rem] of cooldowns) {
+      if (rem <= 1) cooldowns.delete(sym);
+      else cooldowns.set(sym, rem - 1);
+    }
+
+    const eligible = scored.filter(s => !cooldowns.has(s.symbol));
+    const signals  = generateSignals(eligible, config, openPositions);
+
+    for (const signal of signals) {
+      const candles = bySymbol[signal.symbol];
+      const currentCandle = candles.find(c => c.open_time === timestamp)!;
+
+      const fill = await matchingEngine.execute({
+        signal,
+        candle: currentCandle,
+        timestamp,
+      });
+
+      // Record backtest trade
+      await supabase.from("trades").insert({
+        user_id:      session.user_id,
+        session_id,
+        is_live:      false,
+        is_backtest:  true,
+        exchange:     config.exchange,
+        symbol:       signal.symbol,
+        side:         signal.side,
+        type:         signal.type,
+        quantity:     fill.fill_qty,
+        fill_price:   fill.fill_price,
+        fee:          fill.fee,
+        slippage:     fill.slippage,
+        strategy:     config.name,
+        score:        signal.score,
+        candle_time:  timestamp,
+      });
+
+      // Update equity
+      equity += fill.pnl ?? 0;
+
+      // Update position tracking
+      if (signal.side === "buy" || signal.side === "sell") {
+        openPositions.add(signal.symbol);
+        cooldowns.set(signal.symbol, config.cooldown_candles);
+      }
+      if (signal.side === "close_long" || signal.side === "close_short") {
+        openPositions.delete(signal.symbol);
+        cooldowns.set(signal.symbol, config.cooldown_candles);
+      }
+    }
+
+    equityCurve.push({ time: timestamp, equity });
+  }
+
+  // Store results summary
+  const trades = await supabase.from("trades")
+    .select("*").eq("session_id", session_id);
+
+  await supabase.from("bot_sessions").update({
+    status: "completed",
+    stopped_at: new Date().toISOString(),
+  }).eq("id", session_id);
+
+  await supabase.from("backtest_results").insert({
+    session_id,
+    strategy_id:   config.id,
+    equity_curve:  equityCurve,
+    final_equity:  equity,
+    total_trades:  trades.data?.length ?? 0,
+    ...computePerformance(trades.data ?? []),
+  });
+}
+```
+
+```sql
+CREATE TABLE backtest_results (
+  id             UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  session_id     UUID NOT NULL REFERENCES bot_sessions(id) UNIQUE,
+  strategy_id    UUID NOT NULL REFERENCES strategies(id),
+  equity_curve   JSONB NOT NULL,
+  final_equity   NUMERIC NOT NULL,
+  total_trades   INT NOT NULL,
+  win_rate       NUMERIC,
+  avg_pnl        NUMERIC,
+  sharpe         NUMERIC,
+  max_drawdown   NUMERIC,
+  total_pnl      NUMERIC,
+  created_at     TIMESTAMPTZ DEFAULT now()
+);
+```
+
+---
+
+## Section 7: Telegram Interface
+
+### Creating a Strategy
+
+```
+/strategy new
+
+Bot: What would you like to call this strategy?
+User: RSI Reversal 4H
+
+Bot: Choose a market type:
+[Spot] [Perpetuals] [Futures]
+
+User: Perpetuals
+
+Bot: Choose a direction:
+[Long only] [Short only] [Both]
+
+User: Short only
+
+Bot: Timeframe?
+[1m] [5m] [15m] [1h] [4h] [1d]
+
+User: 4h
+
+Bot: Score threshold to enter a short? (default: -60)
+User: -70
+
+Bot: Trailing stop %? (default: 2.0)
+User: 4
+
+Bot: Margin per trade in USDT? (default: 50)
+User: 50
+
+Bot: Leverage? (default: 10)
+User: 30
+
+Bot: ✅ Strategy "RSI Reversal 4H" created.
+Use /strategy config RSI Reversal 4H to review or edit.
+Use /backtest RSI Reversal 4H to test it.
+Use /sim start RSI Reversal 4H to run it in simulation.
+```
+
+### Running a Backtest
+
+```
+/backtest "RSI Reversal 4H" 2024-01-01 2024-12-31
+
+Bot: 🔄 Backtest running for "RSI Reversal 4H"
+     Period: Jan 1 2024 → Dec 31 2024
+     Exchange: Binance Perps | Timeframe: 4H | Direction: Short
+
+[~2-30 seconds depending on symbol count and date range]
+
+Bot: 📊 Backtest Complete — RSI Reversal 4H
+
+     Total trades:    47
+     Win rate:        61.7%
+     Total PnL:       +$312.40
+     Max drawdown:    -8.2%
+     Sharpe ratio:    1.43
+     Final equity:    $1,312.40
+
+     Top symbols: ETHUSDT (+$94), SOLUSDT (+$71), AVAXUSDT (+$58)
+
+     /backtest chart RSI Reversal 4H — equity curve
+     /backtest trades RSI Reversal 4H — full trade list
+     /sim start RSI Reversal 4H — run live simulation with these params
+```
+
+### Attaching a Bot to a Strategy
+
+```
+/sim start "RSI Reversal 4H"
+
+Bot: ✅ Simulation bot started.
+     Strategy: RSI Reversal 4H
+     Mode: Simulation (paper trading)
+     Scanning every: 4 hours (on candle close)
+     Watching: up to 50 USDT perpetuals > $1M 24h volume
+     Max positions: 3 | Margin: $50 | Leverage: 30x
+
+     Use /sim stop to halt.
+     Use /sim status to see current positions and scores.
+```
+
+```
+/live_on "RSI Reversal 4H"
+
+Bot: ⚠️ This will place REAL orders on Binance.
+     Strategy: RSI Reversal 4H
+     Margin per trade: $50 USDT | Leverage: 30x
+     Max drawdown kill: 10% (configurable with --stop-loss)
+
+     [Confirm] [Cancel]
+
+User: Confirm
+
+Bot: ✅ Live bot started with strategy "RSI Reversal 4H".
+     Circuit breaker armed at 10% drawdown.
+```
+
+---
+
+## Section 8: Score Explainability
+
+Users should be able to ask why a symbol scored what it scored. This is a key educational feature.
+
+```
+/score ETHUSDT
+
+Bot: 📊 ETHUSDT — Score: -74 (Strong Short Signal)
+     Timeframe: 4H | Scanned: 3 minutes ago
+
+     RSI (weight 20):       -0.82  →  -16.4 pts
+       RSI = 71.2 (overbought)
+
+     Bollinger (weight 20): -0.91  →  -18.2 pts
+       Price at 94% of BB range (near upper band)
+
+     EMA (weight 15):       -0.44  →  -6.6 pts
+       Fast EMA below slow EMA
+
+     Volume (weight 15):    -0.61  →  -9.2 pts
+       Volume 1.8x avg on down candles
+
+     Funding (weight 15):   -0.60  →  -9.0 pts
+       Funding rate: +0.012% (longs paying heavily)
+
+     Patterns (weight 15):  -1.00  →  -15.0 pts
+       Bearish engulfing detected
+
+     Total: -74 / -100
+     Threshold to trigger short: -70 ✅
+```
+
+This is assembled directly from the `components` JSONB stored in `scan_scores`. Zero extra computation.
+
+---
+
+## Block D Checklist
+
+- [ ] Run `strategies`, `bot_sessions`, `scan_scores`, `backtest_results` SQL in Supabase
+- [ ] Add `is_backtest`, `score`, `candle_time`, `copy_exec_id` columns to `trades` table
+- [ ] Deploy `ifyrt-scanner` service on Railway
+- [ ] Verify weight sum validation (reject strategy if weights ≠ 100) in API layer
+- [ ] Test `/strategy new` full Telegram flow → row in `strategies`
+- [ ] Test `/backtest` → `bot_sessions` row (mode=backtest) → results row → Telegram summary
+- [ ] Test `/sim start` → scan loop fires → scores persisted → signals published
+- [ ] Test `/score SYMBOL` → correct breakdown from stored components
+- [ ] Confirm backtest and sim use identical scorer and signal generator code paths
+- [ ] Stress test: 50 symbols × 365 days × 4H candles — verify backtest completes < 30s
+
+---
+
+The scanner, scorer, signal engine, bot attachment, and backtest all share one config object and one code path. Want to move into the strategy marketplace next (users publishing strategies for others to copy-trade against), or go back and harden any specific section here?
+
+
+
+
+
+---
+
+# 🧠 IFYRT — Section 9 (Final): Landing Page & Payment Portal
+## Design Specification
+
+---
+
+## What This Section Covers
+
+The **public-facing landing page** hosted on Vercel and the **subscription payment portal** powered by Stripe. This section defines the full page structure, copy direction, visual layout logic, Stripe integration architecture, webhook flow into Supabase, and how a new subscriber transitions from the landing page into the active Ifyrt platform.
+
+This is a **design specification only** — not implementation code. It serves as the complete brief for building the page.
+
+---
+
+## Guiding Principles
+
+```
+✅ The landing page is the top of the funnel — Telegram is the product
+✅ Goal: get the user to hit "Start Free Trial" and open the bot
+✅ Framing: educational, risk-free, intelligent — not "get rich quick"
+✅ Pricing is dead simple: one paid tier, one trial, nothing hidden
+✅ The payment portal must feed back into the platform automatically
+✅ Mobile-first — most crypto users are on phone
+```
+
+---
+
+## Hosting & Tech Stack
+
+| Layer | Tool | Notes |
+|---|---|---|
+| Frontend | **Vercel** (free tier) | Static or Next.js SSR, deploy from GitHub |
+| Payments | **Stripe** | Subscriptions API + Customer Portal |
+| Webhook Receiver | **Railway** (new service: `ifyrt-payments`) | Listens for Stripe events |
+| Subscription State | **Supabase** | Updated by webhook receiver |
+| Domain | Custom (e.g. `ifyrt.app`) | Connected via Vercel DNS |
+
+---
+
+## Page Structure — Section by Section
+
+The landing page is a single long-scroll page with the following sections in order:
+
+---
+
+### Section A — Navigation Bar
+
+**Left:** Ifyrt logo + wordmark  
+**Right:** `Log In` (ghost button) | `Start Free Trial` (primary CTA button)
+
+Behavior:
+- Sticky on scroll
+- `Log In` links to the Telegram bot directly (`https://t.me/IFYRTbot`)
+- `Start Free Trial` scrolls to the pricing section or links to Stripe Checkout
+- On mobile: hamburger collapses to same two actions
+
+---
+
+### Section B — Hero
+
+**Layout:** Full-width, dark background (deep navy or near-black), centered content
+
+**Headline:**  
+> Trade smarter. Risk nothing.
+
+**Subheadline:**  
+> Ifyrt is a Telegram-native trading simulator. Backtest strategies, run live paper trades, and copy peers — all without touching real funds.
+
+**Primary CTA:**  
+`▶ Start Your 7-Day Free Trial` — large, high-contrast button
+
+**Secondary CTA:**  
+`See how it works ↓` — ghost button that scrolls to the explainer section
+
+**Supporting element:**  
+A looping, minimal animation or static visual: a Telegram chat window showing a bot returning a backtest result (e.g. the Section 7 backtest output example). This grounds the product in its actual UX immediately.
+
+**Trust line beneath CTAs:**  
+> No credit card required for trial · Cancel anytime · Real market data, zero real risk
+
+---
+
+### Section C — How It Works
+
+**Layout:** 3-column horizontal on desktop, stacked vertical on mobile
+
+**Headline:** `How Ifyrt Works`
+
+**Three steps:**
+
+| Step | Icon | Heading | Body |
+|---|---|---|---|
+| 1 | ⚡ | Open the bot | Start Ifyrt directly in Telegram. No app download, no account setup beyond a username. |
+| 2 | 📈 | Build and backtest | Create a strategy, define your parameters, and run it against real historical data in seconds. |
+| 3 | 🤖 | Simulate live | Let the bot run in real-time paper trading mode — scanning live markets, generating signals, tracking PnL — all risk-free. |
+
+---
+
+### Section D — Feature Highlights
+
+**Layout:** Alternating image/text rows (or icon-left cards on mobile)
+
+**Headline:** `Everything you need. Nothing you don't.`
+
+**Features list:**
+
+**1. Real Market Data, Simulated Execution**  
+Signals are generated from live Binance/Bybit order book data. Slippage, fees, and latency are modeled accurately — not idealized.  
+*Why it matters: you learn how trades actually behave, not how they look on paper.*
+
+**2. Multi-Symbol Scanner**  
+The bot scans up to 50 perpetual pairs per timeframe close, scoring each one against your strategy's weighted indicator mix.  
+*Why it matters: you're never limited to watching one pair.*
+
+**3. Score Explainability**  
+Every signal comes with a breakdown: which indicator contributed how many points and why.  
+Use `/score ETHUSDT` to understand exactly why a trade fired.  
+*Why it matters: you learn the market, not just the output.*
+
+**4. Copy-Trade Simulation**  
+Follow a consenting peer's strategy in real-time simulation. No funds shared, no exposure — just signal mirroring.  
+*Why it matters: learn from experienced traders without trusting them with your money.*
+
+**5. Live Trading (Paid Tier)**  
+When you're ready, flip the live switch. The same strategy that ran in simulation now executes real orders. Circuit breakers protect against runaway drawdowns.  
+*Why it matters: the transition from sim to live is seamless — your strategy doesn't change, only the execution layer does.*
+
+**6. Full Telegram Control**  
+Every feature is accessible via a `/command`. No separate app to manage. The optional web dashboard mirrors your activity but never replaces the bot.  
+*Why it matters: your workflow lives where you already are.*
+
+---
+
+### Section E — Pricing
+
+**Layout:** Single centered card (one tier only — simplicity is the point)
+
+**Headline:** `Simple, honest pricing.`
+
+**Pricing Card:**
+
+```
+┌─────────────────────────────────────────┐
+│                                         │
+│   🆓  7-Day Free Trial                  │
+│       Full access, no credit card       │
+│                                         │
+│   ───────────────────────────────────   │
+│                                         │
+│   💳  $6.99 / month                     │
+│       After your trial ends             │
+│                                         │
+│   ✅  Unlimited backtesting             │
+│   ✅  Real-time simulation              │
+│   ✅  Multi-symbol scanner              │
+│   ✅  Copy-trade simulation             │
+│   ✅  Live trading (your API keys)      │
+│   ✅  Web dashboard                     │
+│   ✅  Score explainability              │
+│   ✅  Cancel any time                   │
+│                                         │
+│   [ ▶ Start Free Trial ]                │
+│   No credit card needed to start        │
+│                                         │
+└─────────────────────────────────────────┘
+```
+
+**Below card:**  
+> After 7 days, you'll be prompted to subscribe in Telegram or here. Your strategies and history are saved either way.
+
+---
+
+### Section F — Social Proof (Placeholder / Future)
+
+**Layout:** Minimal quote cards or stat strip
+
+**Placeholder content for launch:**
+
+```
+"Finally — a bot that explains WHY it signaled, not just that it did."
+— Beta tester, crypto Twitter
+
+"Ran the same strategy in sim for 3 weeks before going live. 
+ The transition was seamless."
+— Early access user
+```
+
+**Alternatively**, launch with a stat strip:
+```
+[ 10,000+ backtests run ] [ 40+ supported pairs ] [ Real Binance data ]
+```
+
+---
+
+### Section G — FAQ
+
+**Layout:** Accordion / expandable rows
+
+**Questions:**
+
+**Is my money at risk during simulation?**  
+No. Simulation mode uses real market data but no real funds. Orders are filled by a simulated matching engine, not a live exchange.
+
+**Do I need a Binance or Bybit account?**  
+Not for simulation or backtesting. You only need to connect an exchange API key if you want to enable live trading.
+
+**Where do I run Ifyrt?**  
+Entirely in Telegram. Search for @IFYRTbot and send `/start`. There is also an optional web dashboard for paid subscribers.
+
+**What happens after my 7-day trial?**  
+The bot will notify you in Telegram. You can subscribe for $6.99/month to continue. Your strategies and backtest history are saved regardless.
+
+**Can I cancel any time?**  
+Yes. Cancel from within Telegram via `/subscribe`, or from the Stripe Customer Portal linked from your dashboard. Your access continues until the end of the current billing period.
+
+**Is my exchange API key secure?**  
+API keys are encrypted at rest using KMS-backed envelope encryption and are only decrypted inside the isolated live execution environment. They are never logged or exposed to other services.
+
+---
+
+### Section H — Final CTA
+
+**Layout:** Full-width dark section, centered
+
+**Headline:**  
+> Start trading smarter today.
+
+**Subheadline:**  
+> 7 days free. No credit card. No risk.
+
+**CTA Button:**  
+`▶ Open Ifyrt in Telegram`  
+Links directly to `https://t.me/IFYRTbot`
+
+**Secondary line:**  
+`or subscribe first →` (links to Stripe Checkout if they want to skip the trial and go straight to paid)
+
+---
+
+### Section I — Footer
+
+**Left:** Ifyrt logo + tagline ("Trade smarter. Risk nothing.")  
+**Center:** `Privacy Policy` | `Terms of Service` | `Contact`  
+**Right:** Telegram icon linking to bot | GitHub (if open source) | Twitter/X  
+**Bottom line:** `© 2025 Ifyrt. Not financial advice. Simulation only.`
+
+---
+
+## Payment Portal Architecture
+
+The payment flow has two entry points: the landing page and the Telegram bot itself (via `/subscribe`). Both converge on Stripe and feed back into the same Supabase subscription record.
+
+---
+
+### Stripe Product Setup
+
+```
+Stripe Dashboard Configuration:
+
+Product:    Ifyrt Subscription
+Price:      $6.99 / month (recurring)
+Trial:      7 days (Stripe-native free trial)
+Currency:   USD
+
+Metadata on Stripe Customer:
+  telegram_id: {user's Telegram ID}
+  ifyrt_user_id: {Supabase users.id}
+```
+
+Two ways to create a Stripe Checkout session:
+
+**Path A — Landing page (new user, no Telegram session yet):**  
+User clicks CTA → enters Telegram username → Checkout session created → on success, bot sends them a `/start` message automatically.
+
+**Path B — Telegram bot (`/subscribe` command):**  
+n8n creates a Stripe Checkout session with `telegram_id` pre-filled as metadata → sends user a short-lived payment link in Telegram → user pays → webhook fires → subscription activated.
+
+---
+
+### Stripe Checkout Session Parameters
+
+```
+POST /v1/checkout/sessions
+
+{
+  mode: "subscription",
+  line_items: [{ price: "price_ifyrt_699_monthly", quantity: 1 }],
+  subscription_data: {
+    trial_period_days: 7,
+    metadata: {
+      telegram_id: "{user_telegram_id}",
+      ifyrt_user_id: "{supabase_user_id}"
+    }
+  },
+  success_url: "https://ifyrt.app/subscribed?session_id={CHECKOUT_SESSION_ID}",
+  cancel_url: "https://ifyrt.app/#pricing",
+  customer_email: "{optional — collected on landing page path}",
+  allow_promotion_codes: true
+}
+```
+
+---
+
+### Webhook Receiver Service (`ifyrt-payments`)
+
+New Railway service. Listens for Stripe webhook events and updates Supabase accordingly.
+
+**Service responsibilities:**
+```
+✅ Receive POST from Stripe (signed with STRIPE_WEBHOOK_SECRET)
+✅ Verify signature before processing
+✅ Update Supabase subscriptions table
+✅ Notify user in Telegram on status change
+✅ Log all events to audit_log
+```
+
+**Events to handle:**
+
+| Stripe Event | Action |
+|---|---|
+| `checkout.session.completed` | Set `tier = 'paid'`, `trial_start = now()`, `trial_end = now() + 7d`, `stripe_customer_id`, `stripe_subscription_id` |
+| `customer.subscription.updated` | Update `paid_until` to new period end |
+| `customer.subscription.deleted` | Set `tier = 'free'`, clear `paid_until` — send Telegram notice |
+| `invoice.payment_failed` | Send Telegram warning: "Payment failed — update card to keep access" |
+| `invoice.payment_succeeded` | Update `paid_until`, optionally send Telegram confirmation |
+
+**Webhook handler pseudocode:**
+
+```typescript
+// ifyrt-payments/src/index.ts
+
+app.post("/stripe/webhook", express.raw({ type: "application/json" }), async (req, res) => {
+  const sig = req.headers["stripe-signature"]!;
+  let event: Stripe.Event;
+
+  try {
+    event = stripe.webhooks.constructEvent(req.body, sig, process.env.STRIPE_WEBHOOK_SECRET!);
+  } catch (err) {
+    return res.status(400).send("Webhook signature verification failed");
+  }
+
+  res.sendStatus(200); // acknowledge immediately
+
+  const { telegram_id, ifyrt_user_id } = extractMetadata(event);
+
+  switch (event.type) {
+
+    case "checkout.session.completed": {
+      const session = event.data.object as Stripe.Checkout.Session;
+      await supabase.from("subscriptions").update({
+        tier: "paid",
+        trial_start: new Date().toISOString(),
+        trial_end: addDays(new Date(), 7).toISOString(),
+        stripe_customer_id: session.customer as string,
+        stripe_subscription_id: session.subscription as string,
+      }).eq("user_id", ifyrt_user_id);
+
+      await sendTelegram(telegram_id,
+        "✅ Trial started! You have full access for 7 days.\n\n" +
+        "Use /strategies to get started, or /help to see all commands."
+      );
+      break;
+    }
+
+    case "customer.subscription.deleted": {
+      await supabase.from("subscriptions").update({
+        tier: "free",
+        paid_until: null,
+      }).eq("user_id", ifyrt_user_id);
+
+      await sendTelegram(telegram_id,
+        "⛔ Your Ifyrt subscription has ended.\n\n" +
+        "Backtesting remains free. Use /subscribe to reactivate full access."
+      );
+      break;
+    }
+
+    case "invoice.payment_failed": {
+      await sendTelegram(telegram_id,
+        "⚠️ Payment failed for your Ifyrt subscription.\n\n" +
+        "Update your payment method to keep access: {stripe_portal_url}"
+      );
+      break;
+    }
+
+    case "invoice.payment_succeeded": {
+      const invoice = event.data.object as Stripe.Invoice;
+      const periodEnd = new Date((invoice.lines.data[0].period.end) * 1000);
+      await supabase.from("subscriptions").update({
+        paid_until: periodEnd.toISOString(),
+      }).eq("user_id", ifyrt_user_id);
+      break;
+    }
+  }
+
+  await supabase.from("audit_log").insert({
+    event_type: `stripe.${event.type}`,
+    user_id: ifyrt_user_id,
+    metadata: { stripe_event_id: event.id },
+  });
+});
+```
+
+---
+
+### Supabase Schema — Subscriptions Table (Updated)
+
+```sql
+ALTER TABLE subscriptions ADD COLUMN IF NOT EXISTS stripe_customer_id     TEXT UNIQUE;
+ALTER TABLE subscriptions ADD COLUMN IF NOT EXISTS stripe_subscription_id TEXT UNIQUE;
+ALTER TABLE subscriptions ADD COLUMN IF NOT EXISTS paid_until             TIMESTAMPTZ;
+
+-- Full updated subscriptions table:
+CREATE TABLE subscriptions (
+  id                    UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id               UUID NOT NULL REFERENCES users(id) UNIQUE,
+  tier                  TEXT NOT NULL DEFAULT 'free'
+                          CHECK (tier IN ('free', 'trial', 'paid')),
+  trial_start           TIMESTAMPTZ,
+  trial_end             TIMESTAMPTZ,
+  paid_until            TIMESTAMPTZ,
+  stripe_customer_id    TEXT UNIQUE,
+  stripe_subscription_id TEXT UNIQUE,
+  created_at            TIMESTAMPTZ DEFAULT now(),
+  updated_at            TIMESTAMPTZ DEFAULT now()
+);
+```
+
+---
+
+### Stripe Customer Portal
+
+Paid subscribers can manage their own subscription (cancel, update card, view invoices) via the Stripe-hosted Customer Portal. This is linked:
+
+- From the web dashboard (subscription settings page)
+- From Telegram via `/subscribe` → bot sends a short-lived portal URL
+
+**Portal session creation:**
+```typescript
+const portalSession = await stripe.billingPortal.sessions.create({
+  customer: stripeCustomerId,
+  return_url: "https://ifyrt.app/dashboard",
+});
+// Send portalSession.url to user
+```
+
+---
+
+### Environment Variables for `ifyrt-payments`
+
+```
+STRIPE_SECRET_KEY=sk_live_...
+STRIPE_WEBHOOK_SECRET=whsec_...
+STRIPE_PRICE_ID=price_ifyrt_699_monthly
+SUPABASE_URL=https://xxx.supabase.co
+SUPABASE_SERVICE_KEY=your_service_role_key
+TELEGRAM_BOT_TOKEN=your_bot_token
+PORT=3000
+```
+
+---
+
+### `/subscribe` Command Flow (Telegram Path)
+
+```
+User: /subscribe
+
+Bot: 💳 Ifyrt Subscription
+
+     Current status: Trial — 3 days remaining
+
+     [▶ Subscribe for $6.99/mo]  [🔧 Manage Billing]
+
+User taps "Subscribe for $6.99/mo"
+
+n8n:
+  → Calls ifyrt-payments/create-checkout-session
+  → Returns short-lived Stripe Checkout URL
+  → Sends URL to user via Telegram
+
+Bot: 🔗 Complete your subscription here (link expires in 30 min):
+     https://checkout.stripe.com/pay/cs_...
+
+     After payment, your access upgrades immediately.
+
+[User completes Stripe Checkout]
+
+Stripe fires webhook → ifyrt-payments receives it
+→ Supabase updated → tier = 'paid'
+→ Telegram: "✅ Subscribed! Full access restored."
+```
+
+---
+
+## Landing Page Checklist
+
+- [ ] Set up Vercel project, connect GitHub repo, configure custom domain
+- [ ] Build all 9 page sections (A through I) per spec above
+- [ ] Connect `Start Free Trial` CTA to Stripe Checkout (Path A flow)
+- [ ] Configure Stripe: product, price, 7-day trial, metadata fields
+- [ ] Deploy `ifyrt-payments` service on Railway
+- [ ] Register Stripe webhook endpoint: `https://ifyrt-payments.railway.app/stripe/webhook`
+- [ ] Subscribe to events: `checkout.session.completed`, `customer.subscription.updated`, `customer.subscription.deleted`, `invoice.payment_failed`, `invoice.payment_succeeded`
+- [ ] Run `ALTER TABLE` statements to add Stripe columns to Supabase `subscriptions`
+- [ ] Test full flow: CTA → Checkout → webhook fires → Supabase updated → Telegram message received
+- [ ] Test cancellation flow: cancel in portal → webhook fires → tier set to 'free' → Telegram notice sent
+- [ ] Test payment failure: Stripe test card 4000000000000341 → failure webhook → Telegram warning
+- [ ] Add Stripe Customer Portal link to web dashboard and `/subscribe` command
+- [ ] Verify `STRIPE_WEBHOOK_SECRET` signature validation rejects tampered payloads
+- [ ] Set `allow_promotion_codes: true` in Checkout session for future discount campaigns
+- [ ] Add `© 2025 Ifyrt. Not financial advice.` disclaimer to footer and Terms of Service page
+
+---
+
+## Design Notes
+
+**Visual identity:** Dark background (deep navy #0A0F1E or near-black), accent color should evoke precision — electric blue (#3B82F6) or cool teal (#14B8A6) works well against dark. Monospace font for any code/terminal elements (e.g. `JetBrains Mono`). Clean sans-serif for body copy (e.g. `Inter`).
+
+**Tone:** Intelligent, calm, educational. Avoid phrases like "moon," "alpha," "10x your portfolio." The platform's differentiator is fidelity and safety — lean into that. Users trust Ifyrt because it doesn't oversell.
+
+**Key conversion logic:** The landing page does not need to explain the full system — it needs to make one action obvious: open the bot. Every section should be oriented toward that CTA. The pricing section is the only place where Stripe enters the picture for most users; the trial starts free, in Telegram, and the payment moment arrives naturally via the bot after 7 days.
+
+---
+
+*This completes the Ifyrt design specification. The full system — from event-driven architecture through scanner, backtest engine, copy-trading layer, and subscription lifecycle — is now fully specified across Sections 1 through 9.*
