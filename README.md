@@ -1,4 +1,4 @@
-![Ifyrt logo](assets/brand/ifyrt-logo-primary.png)
+<img src="assets/brand/ifyrt-logo-primary.png" width="160" alt="Ifyrt logo" />
 
 # Ifyrt
 
@@ -69,3 +69,9 @@ npm run dev:bot
 - The simulation core is usable locally without hosted infrastructure.
 - External integrations that need live credentials remain isolated behind their own services.
 - Foundational design documents live in [`docs/archive/foundation/`](docs/archive/foundation/README.md) with cleaned-up names for long-term reference.
+- Architecture diagram is available at [`ifyrt_full_architecture.svg`](../ifyrt_full_architecture.svg) and now reflects Railway deployment (production at https://ifyrt-production.up.railway.app/).
+- Local architecture diagram path (workspace-agnostic): [`../ifyrt_full_architecture.svg`](../ifyrt_full_architecture.svg).
+
+---
+
+<kbd><img src="../ifyrt_full_architecture.svg" width="640" alt="Ifyrt architecture diagram (local file)" /></kbd>
