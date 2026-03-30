@@ -694,6 +694,326 @@ function layout(title: string, description: string, body: string): string {
         align-items: center;
       }
 
+      .hero-grid {
+        display: grid;
+        grid-template-columns: minmax(0, 1.08fr) minmax(320px, 0.92fr);
+        gap: 16px;
+        width: 100%;
+      }
+
+      .hero-copy,
+      .hero-terminal,
+      .workflow-band {
+        padding: 32px;
+      }
+
+      .hero-copy {
+        position: relative;
+        overflow: hidden;
+      }
+
+      .hero-copy::before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background:
+          radial-gradient(circle at 15% 15%, rgba(192, 132, 252, 0.12), transparent 0 42%),
+          linear-gradient(180deg, rgba(255, 255, 255, 0.02), rgba(255, 255, 255, 0));
+        pointer-events: none;
+      }
+
+      .hero-copy > *,
+      .hero-terminal > * {
+        position: relative;
+        z-index: 1;
+      }
+
+      .hero-copy .hero-title,
+      .hero-copy .hero-lead {
+        text-align: left;
+        margin-left: 0;
+        margin-right: 0;
+      }
+
+      .hero-copy .hero-title {
+        max-width: 13ch;
+      }
+
+      .hero-copy .hero-lead {
+        max-width: 60ch;
+      }
+
+      .hero-copy .cta-group {
+        justify-content: flex-start;
+      }
+
+      .stats-strip {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 12px;
+        margin-top: 24px;
+      }
+
+      .stat-tile,
+      .mini-card,
+      .workflow-step,
+      .stack-card {
+        border: 1px solid var(--line);
+        background: rgba(255, 255, 255, 0.03);
+        border-radius: 18px;
+      }
+
+      .stat-tile {
+        padding: 14px 16px;
+      }
+
+      .stat-tile strong {
+        display: block;
+        color: var(--text);
+        font-size: 1rem;
+      }
+
+      .stat-tile span {
+        display: block;
+        margin-top: 6px;
+        color: var(--text-faint);
+        font-size: 0.84rem;
+      }
+
+      .hero-terminal {
+        position: relative;
+      }
+
+      .hero-terminal::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: 24px;
+        right: 24px;
+        height: 1px;
+        background: linear-gradient(90deg, transparent, rgba(192, 132, 252, 0.35), transparent);
+      }
+
+      .terminal-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        padding-bottom: 14px;
+        border-bottom: 1px solid var(--line);
+      }
+
+      .terminal-dots {
+        display: flex;
+        gap: 6px;
+      }
+
+      .terminal-dot {
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+      }
+
+      .terminal-dot:nth-child(1) {
+        background: #fb7185;
+      }
+
+      .terminal-dot:nth-child(2) {
+        background: #f59e0b;
+      }
+
+      .terminal-dot:nth-child(3) {
+        background: #34d399;
+      }
+
+      .terminal-label,
+      .micro-label {
+        color: var(--text-faint);
+        text-transform: uppercase;
+        letter-spacing: 0.12em;
+      }
+
+      .terminal-label {
+        font-size: 0.76rem;
+      }
+
+      .terminal-body,
+      .price-stack,
+      .mini-grid {
+        display: grid;
+        gap: 12px;
+      }
+
+      .terminal-body {
+        margin-top: 16px;
+      }
+
+      .terminal-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 10px;
+      }
+
+      .metric-card {
+        padding: 14px;
+        border-radius: 18px;
+        border: 1px solid var(--line);
+        background: rgba(255, 255, 255, 0.02);
+      }
+
+      .micro-label {
+        display: block;
+        margin-bottom: 8px;
+        font-size: 0.72rem;
+      }
+
+      .metric-card strong {
+        display: block;
+        color: var(--text);
+        font-size: 0.96rem;
+      }
+
+      .metric-value {
+        display: block;
+        margin-top: 8px;
+        font-size: 1.02rem;
+        font-weight: 700;
+        color: var(--accent-soft);
+      }
+
+      .command-feed {
+        display: grid;
+        gap: 10px;
+      }
+
+      .feed-item {
+        padding: 14px 16px;
+        border-radius: 18px;
+        border: 1px solid var(--line);
+        background: linear-gradient(160deg, rgba(139, 92, 246, 0.08) 0%, rgba(10, 7, 22, 0.54) 100%);
+      }
+
+      .feed-item strong {
+        display: block;
+        color: var(--accent-soft);
+        font-size: 0.9rem;
+        font-family: "Courier New", monospace;
+      }
+
+      .feed-item span {
+        display: block;
+        margin-top: 6px;
+        color: var(--text-soft);
+        font-size: 0.88rem;
+      }
+
+      .terminal-note {
+        padding: 14px 16px;
+        border-radius: 18px;
+        border: 1px solid rgba(192, 132, 252, 0.16);
+        background: rgba(14, 8, 28, 0.48);
+        color: var(--text-soft);
+      }
+
+      .bento-grid {
+        display: grid;
+        grid-template-columns: repeat(12, minmax(0, 1fr));
+        gap: 16px;
+      }
+
+      .feature-card-wide {
+        grid-column: span 7;
+      }
+
+      .feature-card-tall {
+        grid-column: span 5;
+      }
+
+      .feature-card-half {
+        grid-column: span 6;
+      }
+
+      .mini-grid {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        margin-top: 18px;
+      }
+
+      .mini-card {
+        padding: 16px;
+      }
+
+      .mini-card strong {
+        display: block;
+        color: var(--text);
+        margin-bottom: 8px;
+      }
+
+      .pill-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-top: 18px;
+      }
+
+      .pill {
+        display: inline-flex;
+        align-items: center;
+        padding: 8px 12px;
+        border-radius: 999px;
+        border: 1px solid var(--line);
+        background: rgba(192, 132, 252, 0.06);
+        color: var(--text-soft);
+        font-size: 0.82rem;
+      }
+
+      .workflow-band {
+        position: relative;
+        overflow: hidden;
+      }
+
+      .workflow-band::before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background: radial-gradient(circle at 80% 20%, rgba(167, 139, 250, 0.1), transparent 0 40%);
+        pointer-events: none;
+      }
+
+      .workflow-copy p {
+        margin-top: 12px;
+      }
+
+      .workflow-steps {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 12px;
+        margin-top: 20px;
+      }
+
+      .workflow-step {
+        padding: 18px;
+      }
+
+      .workflow-step p {
+        margin-top: 10px;
+      }
+
+      .stack-card {
+        padding: 18px;
+      }
+
+      .stack-card-featured {
+        border-color: rgba(192, 132, 252, 0.34);
+        background: linear-gradient(160deg, rgba(192, 132, 252, 0.12) 0%, rgba(10, 7, 22, 0.62) 100%);
+      }
+
+      .stack-card strong {
+        display: block;
+        margin-bottom: 8px;
+        color: var(--text);
+        font-size: 1rem;
+      }
+
       .animate-on-scroll {
         opacity: 0;
         transform: translateY(28px);
@@ -733,8 +1053,23 @@ function layout(title: string, description: string, body: string): string {
         .step-grid,
         .showcase-grid,
         .pricing-shell,
-        .legal-shell {
+        .legal-shell,
+        .hero-grid,
+        .stats-strip,
+        .workflow-steps,
+        .terminal-grid,
+        .mini-grid {
           grid-template-columns: 1fr;
+        }
+
+        .bento-grid {
+          grid-template-columns: 1fr;
+        }
+
+        .feature-card-wide,
+        .feature-card-tall,
+        .feature-card-half {
+          grid-column: auto;
         }
 
         .site-header {
@@ -776,6 +1111,12 @@ function layout(title: string, description: string, body: string): string {
         .hero-shell {
           padding: 44px 22px 30px;
           border-radius: 24px;
+        }
+
+        .hero-copy,
+        .hero-terminal,
+        .workflow-band {
+          padding: 22px;
         }
 
         .cta-group {
@@ -895,8 +1236,6 @@ function renderFooter(supportEmail: string): string {
 
 export function renderLandingPage(options: LandingOptions): string {
   const hasStripe = Boolean(options.stripeUrl);
-  const pricingSecondaryLabel = hasStripe ? "Start Free Trial" : "How It Works";
-  const pricingSecondaryHref = hasStripe ? options.botUrl : "#how-it-works";
 
   return layout(
     "Ifyrt",
@@ -905,128 +1244,11 @@ export function renderLandingPage(options: LandingOptions): string {
       ${renderSiteHeader("home", "#pricing")}
 
       <section class="hero">
-        <div class="panel panel-strong hero-shell animate-on-scroll">
-          <span class="hero-badge">7-Day Free Trial Available</span>
-          <h1 class="hero-title">Algorithmic trading, <span>orchestrated from Telegram</span></h1>
-          <p class="hero-lead">High-fidelity backtesting and real-time paper trading for serious strategy development. Start with a <strong>7-day free trial</strong> and validate your ideas before transitioning to live execution.</p>
-          <div class="cta-group">
-            <div class="stripe-wrap">
-              <stripe-buy-button
-                buy-button-id="buy_btn_1TGkOd8xqBofAeppPtBiwcVh"
-                publishable-key="pk_live_51TGiY98xqBofAeppqQCoN7ryX23nOjwx5Q0SccQ8ppQleLz2qFASDfp0t2kHegluOnbp63mv079Xo1dCz0ssAA8e00pVGiQE7s"
-              ></stripe-buy-button>
-            </div>
-            <a class="button button-secondary" href="${escapeHtml(options.botUrl)}">Open in Telegram</a>
-            <a class="button button-secondary" href="#how-it-works">How It Works</a>
-          </div>
-          <p class="mini-note">Full access to simulation and backtesting during your trial. Live trading is isolated behind secure risk controls.</p>
-          <div class="proof-strip" aria-label="Highlights">
-            <article class="proof-card animate-on-scroll">
-              <strong>Deterministic backtests</strong>
-              <span>Verify strategy performance with repeatable historical replays and precise fill modeling.</span>
-            </article>
-            <article class="proof-card animate-on-scroll">
-              <strong>Live paper sessions</strong>
-              <span>Bridge the gap between research and reality with real-time simulation using live market data.</span>
-            </article>
-            <article class="proof-card animate-on-scroll">
-              <strong>Secure live execution</strong>
-              <span>Deploy to live markets with isolated key management and automated risk safeguards.</span>
-            </article>
-          </div>
-        </div>
-      </section>
-
-      <section class="section" id="how-it-works">
-        <div class="section-intro animate-on-scroll">
-          <span class="kicker">How It Works</span>
-          <h2>A powerful trading engine behind a simple interface.</h2>
-          <p>Ifyrt provides the tools you need to research, test, and execute algorithmic strategies without the overhead of traditional trading platforms.</p>
-        </div>
-        <div class="step-grid">
-          <article class="panel step-card animate-on-scroll">
-            <span class="number-pill">01</span>
-            <h3>Connect in Telegram</h3>
-            <p>Launch your first simulation in seconds. Telegram serves as your unified command center for deployment and monitoring.</p>
-          </article>
-          <article class="panel step-card animate-on-scroll">
-            <span class="number-pill">02</span>
-            <h3>Backtest & Validate</h3>
-            <p>Verify your edge with high-fidelity historical data and order-book-aware simulation before committing capital.</p>
-          </article>
-          <article class="panel step-card animate-on-scroll">
-            <span class="number-pill">03</span>
-            <h3>Execute with Confidence</h3>
-            <p>Transition to paper trading or live execution using identical logic, protected by server-side risk controls.</p>
-          </article>
-        </div>
-      </section>
-
-      <section class="section" aria-label="Product overview">
-        <div class="showcase-grid">
-          <article class="panel feature-card animate-on-scroll">
-            <span class="kicker">Integrated Workflow</span>
-            <h3>Command-driven precision for every stage of your strategy.</h3>
-            <div class="signal-cluster">
-              <div class="command-line">
-                <strong>/backtest</strong>
-                <p>Execute historical simulations to refine entry logic and risk parameters.</p>
-              </div>
-              <div class="command-line">
-                <strong>/simulate</strong>
-                <p>Monitor live paper trading sessions with real-time exchange data and fees.</p>
-              </div>
-              <div class="command-line">
-                <strong>/status</strong>
-                <p>Track performance, open positions, and subscription state instantly from your chat.</p>
-              </div>
-            </div>
-          </article>
-          <article class="panel feature-card animate-on-scroll">
-            <span class="kicker">Architecture</span>
-            <h3>Designed for reliability and performance.</h3>
-            <p>Ifyrt is built with a clear separation between research and execution, ensuring your live funds are always protected by robust safeguards.</p>
-            <ul class="list-tight">
-              <li>High-fidelity matching engine with real slippage modeling.</li>
-              <li>Secure, encrypted API key management via Supabase Vault.</li>
-              <li>Subscription-based access with transparent pricing.</li>
-              <li>Direct support available at <a href="mailto:${escapeHtml(options.supportEmail)}">${escapeHtml(options.supportEmail)}</a>.</li>
-            </ul>
-          </article>
-        </div>
-      </section>
-
-      <section class="section" id="pricing">
-        <div class="pricing-shell">
-          <article class="panel pricing-card animate-on-scroll">
-            <span class="kicker">Pricing</span>
-            <h2>Simple, transparent pricing for serious traders.</h2>
-            <p>Start with a 7-day free trial of all simulation features. Upgrade to Pro for live execution and full platform capabilities.</p>
-            <div class="price-points">
-              <div class="price-point">
-                <div>
-                  <strong>7-Day Free Trial</strong>
-                  <p>Full access to backtesting and real-time paper simulation. No credit card required to start in Telegram.</p>
-                </div>
-              </div>
-              <div class="price-point">
-                <div>
-                  <strong>Pro Subscription — $6.99/month</strong>
-                  <p>Unlocks live trading execution, secure key management, and professional risk controls.</p>
-                </div>
-              </div>
-              <div class="price-point">
-                <div>
-                  <strong>Unified Command Surface</strong>
-                  <p>Control your entire trading lifecycle through a streamlined, professional Telegram interface.</p>
-                </div>
-              </div>
-            </div>
-          </article>
-          <aside class="panel panel-strong pricing-card animate-on-scroll">
-            <span class="price-callout">Ready to begin?</span>
-            <h3>Join the future of algorithmic strategy development.</h3>
-            <p>${hasStripe ? "Upgrade to Pro for $6.99/month to gain full access to live execution and professional risk controls." : "Open the bot and start your 7-day trial immediately with full access to simulation features."}</p>
+        <div class="hero-grid">
+          <article class="panel panel-strong hero-copy animate-on-scroll">
+            <span class="hero-badge">Telegram-native command center</span>
+            <h1 class="hero-title">Serious strategy research, <span>without the clutter.</span></h1>
+            <p class="hero-lead">Ifyrt turns Telegram into a clean operating surface for deterministic backtests, live paper sessions, and guarded execution — so you can validate ideas before real money is at risk.</p>
             <div class="cta-group">
               <div class="stripe-wrap">
                 <stripe-buy-button
@@ -1035,9 +1257,190 @@ export function renderLandingPage(options: LandingOptions): string {
                 ></stripe-buy-button>
               </div>
               <a class="button button-primary" href="${escapeHtml(options.botUrl)}">Open in Telegram</a>
-              <a class="button button-secondary" href="${escapeHtml(pricingSecondaryHref)}">${escapeHtml(pricingSecondaryLabel)}</a>
+              <a class="button button-secondary" href="#how-it-works">See Workflow</a>
             </div>
-            <p class="mini-note">Have questions? Contact our team at <a href="mailto:${escapeHtml(options.supportEmail)}">${escapeHtml(options.supportEmail)}</a>.</p>
+            <p class="mini-note">Start with the 7-day trial, keep your research in simulation mode, and unlock live execution only when you are ready.</p>
+            <div class="stats-strip" aria-label="Key stats">
+              <div class="stat-tile">
+                <strong>7-day trial</strong>
+                <span>Full simulation access from day one</span>
+              </div>
+              <div class="stat-tile">
+                <strong>$6.99/mo</strong>
+                <span>Unlock live execution and risk controls</span>
+              </div>
+              <div class="stat-tile">
+                <strong>24/7 visibility</strong>
+                <span>Performance and status directly in Telegram</span>
+              </div>
+            </div>
+          </article>
+
+          <aside class="panel hero-terminal animate-on-scroll" aria-label="Preview">
+            <div class="terminal-head">
+              <div class="terminal-dots" aria-hidden="true">
+                <span class="terminal-dot"></span>
+                <span class="terminal-dot"></span>
+                <span class="terminal-dot"></span>
+              </div>
+              <span class="terminal-label">Strategy Control Surface</span>
+            </div>
+            <div class="terminal-body">
+              <div class="terminal-grid">
+                <div class="metric-card">
+                  <span class="micro-label">Session state</span>
+                  <strong>Paper engine active</strong>
+                  <span class="metric-value">+4.82%</span>
+                </div>
+                <div class="metric-card">
+                  <span class="micro-label">Risk mode</span>
+                  <strong>Server-side guarded</strong>
+                  <span class="metric-value">Max DD 4.9%</span>
+                </div>
+              </div>
+              <div class="command-feed">
+                <div class="feed-item">
+                  <strong>/backtest momentum-btc --range 180d</strong>
+                  <span>61.4% win rate with deterministic fills and fee modeling.</span>
+                </div>
+                <div class="feed-item">
+                  <strong>/simulate breakout-eth</strong>
+                  <span>Watch live paper execution with market data, slippage, and session tracking.</span>
+                </div>
+                <div class="feed-item">
+                  <strong>/status</strong>
+                  <span>Open positions, subscription state, and performance in one clean feed.</span>
+                </div>
+              </div>
+              <div class="terminal-note">Research stays first. Live execution remains isolated behind secure keys, subscription gating, and backend risk controls.</div>
+            </div>
+          </aside>
+        </div>
+      </section>
+
+      <section class="section" aria-label="Why traders use Ifyrt">
+        <div class="section-intro animate-on-scroll">
+          <span class="kicker">Platform Design</span>
+          <h2>A better surface for testing ideas before capital is on the line.</h2>
+          <p>Instead of scattered tools and noisy dashboards, Ifyrt gives you a single command-driven workflow built around validation, not hype.</p>
+        </div>
+        <div class="bento-grid">
+          <article class="panel feature-card feature-card-wide animate-on-scroll">
+            <span class="kicker">Research Surface</span>
+            <h3>From hypothesis to validation in one clean flow.</h3>
+            <div class="mini-grid">
+              <div class="mini-card">
+                <strong>Historical replay</strong>
+                <p>Repeatable backtests with precise fills and slippage logic.</p>
+              </div>
+              <div class="mini-card">
+                <strong>Live paper sessions</strong>
+                <p>Bridge research and reality with real-time market data.</p>
+              </div>
+              <div class="mini-card">
+                <strong>Execution handoff</strong>
+                <p>Use the same logic path when you step up to live trading.</p>
+              </div>
+            </div>
+            <div class="pill-row">
+              <span class="pill">Deterministic backtests</span>
+              <span class="pill">Order-book-aware simulation</span>
+              <span class="pill">Telegram-native control</span>
+            </div>
+          </article>
+
+          <article class="panel feature-card feature-card-tall animate-on-scroll">
+            <span class="kicker">Risk Layer</span>
+            <h3>Designed so live capital is never the default path.</h3>
+            <ul class="list-tight">
+              <li>Simulation-first workflow so ideas are validated before live execution.</li>
+              <li>Secure exchange key handling with isolated backend services.</li>
+              <li>Paid live features separated from research and paper trading access.</li>
+              <li>Direct support via <a href="mailto:${escapeHtml(options.supportEmail)}">${escapeHtml(options.supportEmail)}</a>.</li>
+            </ul>
+          </article>
+
+          <article class="panel feature-card feature-card-half animate-on-scroll">
+            <span class="kicker">In Chat</span>
+            <h3>Commands instead of clutter.</h3>
+            <p>Launch a backtest, spin up a paper session, or inspect current performance without switching context or learning a heavy platform UI.</p>
+          </article>
+
+          <article class="panel feature-card feature-card-half animate-on-scroll">
+            <span class="kicker">Subscription</span>
+            <h3>Simple pricing with a clear upgrade point.</h3>
+            <p>Start free for seven days, keep full research access, and only move into the paid tier when you want the live execution layer.</p>
+          </article>
+        </div>
+      </section>
+
+      <section class="section" id="how-it-works">
+        <div class="panel panel-strong workflow-band animate-on-scroll">
+          <div class="workflow-copy">
+            <span class="kicker">Workflow</span>
+            <h2>Research first. Simulate live. Then deploy with confidence.</h2>
+            <p>Ifyrt is structured around a controlled progression instead of pushing traders straight into live risk.</p>
+          </div>
+          <div class="workflow-steps">
+            <div class="workflow-step">
+              <span class="number-pill">01</span>
+              <h3>Open the bot</h3>
+              <p>Use Telegram as the command surface for setup, session control, and monitoring.</p>
+            </div>
+            <div class="workflow-step">
+              <span class="number-pill">02</span>
+              <h3>Validate the edge</h3>
+              <p>Run backtests and live paper sessions to pressure-test entries, exits, and risk.</p>
+            </div>
+            <div class="workflow-step">
+              <span class="number-pill">03</span>
+              <h3>Unlock live execution</h3>
+              <p>Move into the Pro tier only when your strategy and controls are ready.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="section" id="pricing">
+        <div class="pricing-shell">
+          <article class="panel pricing-card animate-on-scroll">
+            <span class="kicker">Pricing</span>
+            <h2>Built for disciplined strategy development.</h2>
+            <p>Everything starts in safe research mode. Upgrade only when you want the live execution layer.</p>
+            <div class="price-stack">
+              <div class="stack-card">
+                <span class="micro-label">Trial</span>
+                <strong>7 days free</strong>
+                <p>Backtesting, paper trading, and the full research workflow directly in Telegram.</p>
+              </div>
+              <div class="stack-card stack-card-featured">
+                <span class="micro-label">Pro</span>
+                <strong>$6.99 per month</strong>
+                <p>Unlock live execution, secure key management, and the guarded production layer.</p>
+              </div>
+            </div>
+            <ul class="list-tight">
+              <li>Transparent upgrade path with no bloated feature ladder.</li>
+              <li>Same command surface from research through execution.</li>
+              <li>Human support when you need help or have billing questions.</li>
+            </ul>
+          </article>
+
+          <aside class="panel panel-strong pricing-card animate-on-scroll">
+            <span class="price-callout">Start now</span>
+            <h3>Open the bot or subscribe instantly.</h3>
+            <p>${hasStripe ? "Use the embedded Stripe checkout below, then move straight into Telegram to start operating." : "Open the bot now and begin your 7-day trial with full access to the simulation workflow."}</p>
+            <div class="cta-group">
+              <div class="stripe-wrap">
+                <stripe-buy-button
+                  buy-button-id="buy_btn_1TGkOd8xqBofAeppPtBiwcVh"
+                  publishable-key="pk_live_51TGiY98xqBofAeppqQCoN7ryX23nOjwx5Q0SccQ8ppQleLz2qFASDfp0t2kHegluOnbp63mv079Xo1dCz0ssAA8e00pVGiQE7s"
+                ></stripe-buy-button>
+              </div>
+              <a class="button button-primary" href="${escapeHtml(options.botUrl)}">Open in Telegram</a>
+              <a class="button button-secondary" href="mailto:${escapeHtml(options.supportEmail)}">Contact Support</a>
+            </div>
+            <p class="mini-note">Questions, billing help, or onboarding support: <a href="mailto:${escapeHtml(options.supportEmail)}">${escapeHtml(options.supportEmail)}</a>.</p>
           </aside>
         </div>
       </section>
